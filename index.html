@@ -118,6 +118,19 @@ label input,label select,label textarea,dialog textarea{width:100%;font-size:13p
 textarea{resize:vertical}
 .fa2{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-top:14px}
 .fa2>span{margin-right:auto}
+/* guided session */
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:4px 0 12px}
+.chips input{width:84px}
+.chips .on{background:var(--amber);border-color:var(--amber);color:#000}
+.bub{position:relative;width:260px;max-width:100%;aspect-ratio:1;margin:18px auto 8px}
+.bub svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.bub circle{fill:none;stroke-width:2}.bub .rt{stroke:var(--line2)}.bub .rp{stroke:var(--amber);stroke-linecap:round}
+.ball{position:absolute;inset:16px;border-radius:50%;border:1px solid rgba(255,176,0,.55);background:radial-gradient(circle at 50% 42%,rgba(255,176,0,.34),rgba(255,176,0,.07) 68%,transparent);box-shadow:0 0 40px rgba(255,176,0,.12);transform:scale(.45);will-change:transform}
+.cue{position:absolute;inset:0;display:grid;place-content:center;gap:4px;text-align:center;color:var(--amber);letter-spacing:.24em;font-weight:600}
+.cue em{font-style:normal;font-size:28px;letter-spacing:0;color:var(--tx)}
+.clock{font-size:22px;font-weight:600;text-align:center;margin-bottom:4px;letter-spacing:.04em}
+.held .ball{opacity:.45}.held .cue,.clock.held{color:var(--dim)}
+.c{text-align:center}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:90vw;background:var(--panel);border:1px solid var(--amber);color:var(--amber);padding:8px 14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
 #toast.on{opacity:1}
 
@@ -134,7 +147,8 @@ textarea{resize:vertical}
 <header class="top">
   <div class="brand">ISIONXXX <b>//</b> TRAINING<i class="cur"></i></div>
   <div class="acts">
-    <button class="pri" data-a="add">+ ENTRY</button>
+    <button class="pri" data-a="go">&#9654; START</button>
+    <button data-a="add">+ ENTRY</button>
     <button data-a="imp">IMPORT</button>
     <button data-a="note">NOTES</button>
     <input id="file" type="file" accept=".csv,.json,text/csv,application/json" hidden>
@@ -154,10 +168,18 @@ textarea{resize:vertical}
 
 <script>
 'use strict';
-const KEY='isx.training.v1', PAGE=20;
+const KEY='isx.training.v1', RUN='isx.training.run', PAGE=20;
 const RANGES={today:'Today',week:'This week',month:'This month',all:'All time'};
 const TYPES={W:'Weighted',B:'Bodyweight',C:'Cardio'};
 const PRESET=['Back Squat','Bench Press','Deadlift','Overhead Press','Barbell Row','Pull-up','Dip','Push-up','Run','Bike','Row Erg'];
+// breathing patterns for the guided session bubble: [cue, seconds]
+const PACE={
+  'Calm 4-6':[['INHALE',4],['EXHALE',6]],
+  'Box 4-4-4-4':[['INHALE',4],['HOLD',4],['EXHALE',4],['HOLD',4]],
+  'Resonance 5.5':[['INHALE',5.5],['EXHALE',5.5]],
+  'Physiological sigh':[['INHALE',2],['TOP UP',1],['EXHALE',6]],
+  '4-7-8':[['INHALE',4],['HOLD',7],['EXHALE',8]]
+};
 const ALIAS={
   at:['date','when','datetime','timestamp','time (local)','start time'],
   ex:['exercise','exercise name','movement','lift','activity'],
@@ -343,7 +365,7 @@ function render(){
   $('[data-f=range]').innerHTML=Object.entries(RANGES).map(([k,v])=>`<option value="${k}"${k===U.range?' selected':''}>${v}</option>`).join('')+(U.range in RANGES?'':`<option value="${U.range}" selected>${dlabel(U.range)}</option>`);
   $('#scope').textContent=`Statistics for ${U.ex==='all'?'All Exercises':names[U.ex]} — ${RANGES[U.range]||dlabel(U.range)}`+(nd?` · ${dlabel(s.dk[0])} → ${dlabel(s.dk[nd-1])}`:'');
 
-  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Log an entry, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="add">+ ENTRY</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
+  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a timed session, log an entry, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ ENTRY</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
 <section class="g g4">
  <div class="card"><p class="h">Progress</p><div class="k">Comparisons</div><div class="big">${n}</div>
   ${gauge([[n?s.w/n:0,'sg'],[n?s.be/n:0,'sd'],[n?s.l/n:0,'sr']],n?Math.round(s.wr)+'%':'—')}
@@ -388,10 +410,14 @@ ${table(T)}
 }
 
 /* ---------- dialogs ---------- */
-function entryForm(t){
-  const d=t||{ex:'',type:'W',at:Date.now(),sets:3,reps:5,load:'',dist:'',mins:'',rpe:'',note:''};
+// run: a finished guided session ({ex,type,at,mins}) to log; numbers start from the last time you did that exercise
+function entryForm(t,run){
+  const last=run&&S.log.filter(x=>exk(x.ex)===exk(run.ex)).sort((a,b)=>b.at-a.at)[0];
+  const d=t||{ex:'',type:'W',at:Date.now(),sets:3,reps:5,load:'',dist:'',mins:'',rpe:'',note:'',
+    ...(last&&{sets:last.sets||'',reps:last.reps||'',load:last.type==='W'?last.load:'',dist:last.dist||''}),
+    ...(run&&{ex:run.ex,type:run.type,at:run.at,mins:run.type==='C'?run.mins:''})};
   const names=[...new Set([...S.log.map(x=>x.ex.trim()),...PRESET])];
-  dlg.innerHTML=`<form id="tf"><h3>${t?'EDIT':'NEW'} ENTRY</h3>
+  dlg.innerHTML=`<form id="tf"><h3>${t?'EDIT ENTRY':run?`SESSION DONE // ${fm(run.mins)}`:'NEW ENTRY'}</h3>
   <div class="fgrid">
    <label>Exercise<input name="ex" list="exs" required autocomplete="off" placeholder="Back Squat" value="${esc(d.ex)}"></label>
    <label>Type<select name="type">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}"${k===d.type?' selected':''}>${v}</option>`).join('')}</select></label>
@@ -405,8 +431,9 @@ function entryForm(t){
   </div>
   <label>Note<textarea name="note" rows="3">${esc(d.note||'')}</textarea></label>
   <datalist id="exs">${names.map(a=>`<option value="${esc(a)}">`).join('')}</datalist>
-  <div class="fa2"><span id="pv"></span><button type="button" data-a="x">CANCEL</button><button class="pri">SAVE</button></div></form>`;
+  <div class="fa2"><span id="pv"></span>${run?'<button type="button" id="wd">DISCARD</button>':'<button type="button" data-a="x">CANCEL</button>'}<button class="pri">SAVE</button></div></form>`;
   const f=$('#tf'),e=f.elements;
+  if(run)$('#wd').onclick=()=>{if(confirm('Discard this session without logging it?')){clearRun();dlg.close()}};
   const read=()=>{const ty=e.type.value,c=ty==='C';return {ex:e.ex.value.trim(),type:ty,at:new Date(e.when.value).getTime(),
     sets:c?0:Math.round(+e.sets.value)||0,reps:c?0:Math.round(+e.reps.value)||0,load:ty==='W'?+e.load.value||0:0,
     dist:c?+e.dist.value||0:0,mins:c?pm(e.mins.value):0,rpe:e.rpe.value===''?null:+e.rpe.value,note:e.note.value.trim()}};
@@ -427,10 +454,102 @@ function entryForm(t){
     ev.preventDefault();const v=read();
     if(!ok(v)){$('#pv').innerHTML='<b class="neg">Fill in the numbers for this type</b>';return}
     if(t)Object.assign(S.log.find(x=>x.id===t.id),v);else S.log.push({id:uid(),...v});
+    if(run)clearRun();
     save();dlg.close();setMonth(v.at);render();
+  });
+  if(!dlg.open)dlg.showModal();
+}
+
+/* ---------- guided session ----------
+   START: pick exercise, length and a breathing pattern. A bubble paces the breath while the ring fills
+   with the session. The run lives in localStorage, so a sleeping screen or a reload doesn't lose it.
+   FINISH (or the chime at the end) opens the entry form prefilled with the exercise, time and duration. */
+let R=null,RI=0,RA=0,WL=null,AC=null;
+try{R=JSON.parse(localStorage.getItem(RUN))}catch(e){}
+const keepRun=()=>{try{localStorage.setItem(RUN,JSON.stringify(R))}catch(e){}};
+const elapsed=()=>(R.paused??Date.now())-R.t0;
+// Esc must not drop a session in progress
+dlg.addEventListener('cancel',e=>{if(R)e.preventDefault()});
+function chime(){
+  try{
+    AC??=new (window.AudioContext||window.webkitAudioContext)();AC.resume();const t=AC.currentTime;
+    [[528,.16],[792,.06]].forEach(([f,v])=>{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.02);g.gain.exponentialRampToValueAtTime(1e-4,t+4);
+      o.connect(g).connect(AC.destination);o.start(t);o.stop(t+4)});
+  }catch(e){}
+}
+async function wake(on){try{if(on&&!WL){WL=await navigator.wakeLock?.request('screen');WL?.addEventListener('release',()=>WL=null)}else if(!on&&WL){WL.release();WL=null}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&R&&R.done==null)wake(true)});
+// where the bubble is at ms into the session: cue, seconds left in the phase, scale (.45 empty – 1 full)
+function breath(ms){
+  const P=PACE[R.pat]||PACE['Calm 4-6'];let x=ms/1000%P.reduce((a,p)=>a+p[1],0),s=.45;
+  for(const[c,d]of P){
+    const to=c==='INHALE'?1:c==='TOP UP'?1.1:c==='EXHALE'?.45:s;
+    if(x<d)return {c,left:Math.ceil(d-x),s:s+(to-s)*(1-Math.cos(Math.PI*x/d))/2};
+    x-=d;s=to;
+  }
+  return {c:'',left:0,s};
+}
+function clearRun(){clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}wake(false)}
+
+function startForm(){
+  const last=S.log.reduce((a,b)=>!a||b.at>a.at?b:a,null),names=[...new Set([...S.log.map(x=>x.ex.trim()),...PRESET])];
+  let pat='Calm 4-6';try{pat=localStorage.getItem(RUN+'.pat')||pat}catch(e){}
+  dlg.innerHTML=`<form id="sf"><h3>START SESSION</h3>
+  <div class="fgrid">
+   <label>Exercise<input name="ex" list="exs" required autocomplete="off" placeholder="Run" value="${esc(last?.ex||'')}"></label>
+   <label>Type<select name="type">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}"${k===(last?.type||'W')?' selected':''}>${v}</option>`).join('')}</select></label>
+  </div>
+  <label>Breathing<select name="pat">${Object.keys(PACE).map(k=>`<option${k===pat?' selected':''}>${k}</option>`).join('')}</select></label>
+  <p class="k" style="margin-top:10px">Minutes</p>
+  <div class="chips">${[5,10,15,20,30].map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="">OPEN</button><input name="mins" type="number" min="0" step="any" placeholder="open" aria-label="Minutes"></div>
+  <datalist id="exs">${names.map(a=>`<option value="${esc(a)}">`).join('')}</datalist>
+  <div class="fa2"><span class="dim">Breathe with the bubble</span><button type="button" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
+  const f=$('#sf'),e=f.elements;
+  const mark=()=>f.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===String(+e.mins.value||'')));
+  f.addEventListener('click',ev=>{const b=ev.target.closest('[data-m]');if(b){e.mins.value=b.dataset.m;mark()}});
+  f.addEventListener('input',mark);mark();
+  f.addEventListener('submit',ev=>{
+    ev.preventDefault();const now=Date.now();
+    try{localStorage.setItem(RUN+'.pat',e.pat.value)}catch(x){}
+    R={ex:e.ex.value.trim(),type:e.type.value,pat:e.pat.value,target:Math.max(0,+e.mins.value||0),start:now,t0:now,paused:null,done:null};
+    chime();keepRun();runView();
   });
   dlg.showModal();
 }
+function runView(){
+  dlg.innerHTML=`<div><h3>${esc(R.ex).toUpperCase()} // ${R.pat.toUpperCase()}</h3>
+  <div class="bub" id="bub"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="rt" cx="120" cy="120" r="118"/><circle class="rp" id="pg" cx="120" cy="120" r="118" pathLength="100" stroke-dasharray="0 100"/></svg>
+   <div class="ball" id="ball"></div><div class="cue" id="pc" aria-live="polite"></div></div>
+  <div class="clock" id="clk"></div>
+  <p class="dim c">${R.target?`${fm(R.target)} session · ends with a chime`:'Open session · finish when ready'}</p>
+  <div class="fa2"><button type="button" id="rd">DISCARD</button><button type="button" id="rp">${R.paused?'RESUME':'PAUSE'}</button><button type="button" class="pri" id="rf">FINISH</button></div></div>`;
+  const tick=()=>{
+    const el=elapsed()/60000;if(R.target&&el>=R.target)return endRun(true);
+    $('#clk').textContent=fm(R.target?R.target-el:el);$('#clk').classList.toggle('held',!!R.paused);$('#bub').classList.toggle('held',!!R.paused);
+    if(R.target)$('#pg').setAttribute('stroke-dasharray',`${(el/R.target*100).toFixed(2)} 100`);
+    const b=breath(elapsed());$('#pc').innerHTML=R.paused?'PAUSED':`${b.c}<em>${b.left}</em>`;
+  };
+  // the bubble moves every frame; the clock and cue only need a few updates a second
+  const anim=()=>{const el=$('#ball');if(!R||R.done!=null||!el)return;el.style.transform=`scale(${breath(elapsed()).s.toFixed(3)})`;RA=requestAnimationFrame(anim)};
+  cancelAnimationFrame(RA);RA=requestAnimationFrame(anim);
+  $('#rp').onclick=()=>{
+    if(R.paused){R.t0+=Date.now()-R.paused;R.paused=null}else R.paused=Date.now();
+    $('#rp').textContent=R.paused?'RESUME':'PAUSE';keepRun();tick();
+  };
+  $('#rf').onclick=()=>endRun(false);
+  $('#rd').onclick=()=>{if(elapsed()<60000||confirm('Discard this session?')){clearRun();dlg.close()}};
+  clearInterval(RI);RI=setInterval(tick,250);tick();
+  if(!dlg.open)dlg.showModal();
+  wake(true);
+}
+function endRun(auto){
+  clearInterval(RI);cancelAnimationFrame(RA);RI=0;
+  R.done=auto?R.target:Math.max(.1,Math.round(elapsed()/6000)/10);
+  if(auto){chime();navigator.vibrate?.([200,120,200])}
+  keepRun();wake(false);wrap();
+}
+const wrap=()=>entryForm(null,{ex:R.ex,type:R.type,at:R.start,mins:R.done});
 function noteForm(day){
   dlg.innerHTML=`<form id="nf"><h3>NOTES // ${dlabel(day)}</h3><textarea name="n" rows="10" placeholder="Sleep. Energy. What moved well. What to change.">${esc(S.notes[day]||'')}</textarea>
   <div class="fa2"><button type="button" data-a="x">CANCEL</button><button class="pri">SAVE</button></div></form>`;
@@ -502,7 +621,7 @@ function sample(){
 
 /* ---------- events ---------- */
 const ACT={
-  add:()=>entryForm(),imp:()=>$('#file').click(),x:()=>dlg.close(),sample,csv:exportCSV,
+  add:()=>entryForm(),go:()=>R?(R.done==null?runView():wrap()):startForm(),imp:()=>$('#file').click(),x:()=>dlg.close(),sample,csv:exportCSV,
   note:()=>noteForm(U.range in RANGES?ymd(new Date()):U.range),
   bak:()=>dl(`training-backup-${ymd(new Date())}.json`,JSON.stringify(S),'application/json'),
   clear:()=>{if(confirm('Delete ALL entries and notes on this device?')){S={...S,log:[],notes:{}};save();U.range='all';boot()}},
@@ -532,6 +651,7 @@ $('#file').addEventListener('change',async e=>{
 
 function boot(){setMonth(S.log.length?Math.max(...S.log.map(t=>t.at)):Date.now());render()}
 boot();
+if(R)R.done==null?runView():wrap();
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
 </body>
