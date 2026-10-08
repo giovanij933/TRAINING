@@ -1,5 +1,5 @@
 // Bump the version string whenever you change index.html so clients pick up the new shell.
-const CACHE = 'isx-training-v2';
+const CACHE = 'isx-training-v3';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {
