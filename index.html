@@ -131,6 +131,13 @@ textarea{resize:vertical}
 .clock{font-size:22px;font-weight:600;text-align:center;margin-bottom:4px;letter-spacing:.04em}
 .held .ball{opacity:.45}.held .cue,.clock.held{color:var(--dim)}
 .c{text-align:center}
+.xl{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px}
+.xl button{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;white-space:nowrap}
+.xl em{font-style:normal;font-size:10px;color:var(--dim)}
+.xl .on{border-color:var(--amber);color:var(--amber)}
+.sets{margin:10px 0 12px;padding-left:22px}.sets li{padding:3px 0}.sets button{padding:0 6px;font-size:10px;margin-left:8px}
+.bigclk{font-size:48px;font-weight:600;text-align:center;margin:14px 0}
+#xs .chips button{font-size:11px;padding:5px 8px}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:90vw;background:var(--panel);border:1px solid var(--amber);color:var(--amber);padding:8px 14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
 #toast.on{opacity:1}
 
@@ -171,7 +178,30 @@ textarea{resize:vertical}
 const KEY='isx.training.v1', RUN='isx.training.run', PAGE=20;
 const RANGES={today:'Today',week:'This week',month:'This month',all:'All time'};
 const TYPES={W:'Weighted',B:'Bodyweight',C:'Cardio'};
-const PRESET=['Back Squat','Bench Press','Deadlift','Overhead Press','Barbell Row','Pull-up','Dip','Push-up','Run','Bike','Row Erg'];
+// exercise library for the workout builder, by training day and type
+const LIB={
+  PUSH:{
+    W:['Bench Press','Incline Bench Press','Dumbbell Bench Press','Incline Dumbbell Press','Close-Grip Bench Press','Overhead Press','Seated Dumbbell Press','Arnold Press','Landmine Press','Cable Fly','Pec Deck','Lateral Raise','Cable Lateral Raise','Triceps Pushdown','Overhead Triceps Extension','Skull Crusher'],
+    B:['Dip','Push-up','Diamond Push-up','Pike Push-up','Handstand Push-up']},
+  PULL:{
+    W:['Deadlift','Rack Pull','Barbell Row','Pendlay Row','Dumbbell Row','Seated Cable Row','Chest-Supported Row','T-Bar Row','Lat Pulldown','Straight-Arm Pulldown','Face Pull','Rear Delt Fly','Shrug','Barbell Curl','Dumbbell Curl','Hammer Curl','Preacher Curl','Cable Curl'],
+    B:['Pull-up','Chin-up','Inverted Row','Hanging Leg Raise']},
+  LEGS:{
+    W:['Back Squat','Front Squat','Hack Squat','Leg Press','Romanian Deadlift','Bulgarian Split Squat','Walking Lunge','Goblet Squat','Hip Thrust','Good Morning','Leg Extension','Leg Curl','Seated Leg Curl','Adductor Machine','Standing Calf Raise','Seated Calf Raise'],
+    B:['Pistol Squat','Nordic Curl','Jump Squat','Step-up','Glute Bridge']},
+  CARDIO:{
+    C:['Run','Treadmill','Incline Walk','Walk','Hike','Bike','Spin Bike','Assault Bike','Row Erg','Ski Erg','Elliptical','Stair Climber','Swim','Jump Rope','Sled Push']}
+};
+// what a new workout of each day starts with selected
+const PICK={
+  PUSH:['Bench Press','Overhead Press','Incline Dumbbell Press','Lateral Raise','Triceps Pushdown'],
+  PULL:['Deadlift','Pull-up','Barbell Row','Face Pull','Dumbbell Curl'],
+  LEGS:['Back Squat','Romanian Deadlift','Leg Press','Leg Curl','Standing Calf Raise'],
+  CARDIO:['Run']
+};
+const XT={};for(const d in LIB)for(const t in LIB[d])LIB[d][t].forEach(x=>XT[x]=t);
+const PRESET=Object.keys(XT);
+const xtype=ex=>{const k=exk(ex),n=PRESET.find(x=>exk(x)===k);return n?XT[n]:null};
 // breathing patterns for the guided session bubble: [cue, seconds]
 const PACE={
   'Calm 4-6':[['INHALE',4],['EXHALE',6]],
@@ -365,7 +395,7 @@ function render(){
   $('[data-f=range]').innerHTML=Object.entries(RANGES).map(([k,v])=>`<option value="${k}"${k===U.range?' selected':''}>${v}</option>`).join('')+(U.range in RANGES?'':`<option value="${U.range}" selected>${dlabel(U.range)}</option>`);
   $('#scope').textContent=`Statistics for ${U.ex==='all'?'All Exercises':names[U.ex]} — ${RANGES[U.range]||dlabel(U.range)}`+(nd?` · ${dlabel(s.dk[0])} → ${dlabel(s.dk[nd-1])}`:'');
 
-  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a timed session, log an entry, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ ENTRY</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
+  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ ENTRY</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
 <section class="g g4">
  <div class="card"><p class="h">Progress</p><div class="k">Comparisons</div><div class="big">${n}</div>
   ${gauge([[n?s.w/n:0,'sg'],[n?s.be/n:0,'sd'],[n?s.l/n:0,'sr']],n?Math.round(s.wr)+'%':'—')}
@@ -410,14 +440,10 @@ ${table(T)}
 }
 
 /* ---------- dialogs ---------- */
-// run: a finished guided session ({ex,type,at,mins}) to log; numbers start from the last time you did that exercise
-function entryForm(t,run){
-  const last=run&&S.log.filter(x=>exk(x.ex)===exk(run.ex)).sort((a,b)=>b.at-a.at)[0];
-  const d=t||{ex:'',type:'W',at:Date.now(),sets:3,reps:5,load:'',dist:'',mins:'',rpe:'',note:'',
-    ...(last&&{sets:last.sets||'',reps:last.reps||'',load:last.type==='W'?last.load:'',dist:last.dist||''}),
-    ...(run&&{ex:run.ex,type:run.type,at:run.at,mins:run.type==='C'?run.mins:''})};
+function entryForm(t){
+  const d=t||{ex:'',type:'W',at:Date.now(),sets:3,reps:5,load:'',dist:'',mins:'',rpe:'',note:''};
   const names=[...new Set([...S.log.map(x=>x.ex.trim()),...PRESET])];
-  dlg.innerHTML=`<form id="tf"><h3>${t?'EDIT ENTRY':run?`SESSION DONE // ${fm(run.mins)}`:'NEW ENTRY'}</h3>
+  dlg.innerHTML=`<form id="tf"><h3>${t?'EDIT':'NEW'} ENTRY</h3>
   <div class="fgrid">
    <label>Exercise<input name="ex" list="exs" required autocomplete="off" placeholder="Back Squat" value="${esc(d.ex)}"></label>
    <label>Type<select name="type">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}"${k===d.type?' selected':''}>${v}</option>`).join('')}</select></label>
@@ -431,9 +457,8 @@ function entryForm(t,run){
   </div>
   <label>Note<textarea name="note" rows="3">${esc(d.note||'')}</textarea></label>
   <datalist id="exs">${names.map(a=>`<option value="${esc(a)}">`).join('')}</datalist>
-  <div class="fa2"><span id="pv"></span>${run?'<button type="button" id="wd">DISCARD</button>':'<button type="button" data-a="x">CANCEL</button>'}<button class="pri">SAVE</button></div></form>`;
+  <div class="fa2"><span id="pv"></span><button type="button" data-a="x">CANCEL</button><button class="pri">SAVE</button></div></form>`;
   const f=$('#tf'),e=f.elements;
-  if(run)$('#wd').onclick=()=>{if(confirm('Discard this session without logging it?')){clearRun();dlg.close()}};
   const read=()=>{const ty=e.type.value,c=ty==='C';return {ex:e.ex.value.trim(),type:ty,at:new Date(e.when.value).getTime(),
     sets:c?0:Math.round(+e.sets.value)||0,reps:c?0:Math.round(+e.reps.value)||0,load:ty==='W'?+e.load.value||0:0,
     dist:c?+e.dist.value||0:0,mins:c?pm(e.mins.value):0,rpe:e.rpe.value===''?null:+e.rpe.value,note:e.note.value.trim()}};
@@ -443,6 +468,7 @@ function entryForm(t,run){
     if(!t&&ev&&ev.target.name==='ex'){
       const k=exk(e.ex.value),last=S.log.filter(x=>exk(x.ex)===k).sort((a,b)=>b.at-a.at)[0];
       if(last){e.type.value=last.type;e.sets.value=last.sets||'';e.reps.value=last.reps||'';e.load.value=last.type==='W'?last.load:'';e.dist.value=last.dist||'';e.mins.value=last.mins?fm(last.mins):''}
+      else if(xtype(e.ex.value))e.type.value=xtype(e.ex.value);
     }
     f.querySelectorAll('[data-t]').forEach(l=>l.hidden=!l.dataset.t.includes(e.type.value));
     const v=read();if(!ok(v)){$('#pv').innerHTML='';return}
@@ -454,21 +480,23 @@ function entryForm(t,run){
     ev.preventDefault();const v=read();
     if(!ok(v)){$('#pv').innerHTML='<b class="neg">Fill in the numbers for this type</b>';return}
     if(t)Object.assign(S.log.find(x=>x.id===t.id),v);else S.log.push({id:uid(),...v});
-    if(run)clearRun();
     save();dlg.close();setMonth(v.at);render();
   });
-  if(!dlg.open)dlg.showModal();
+  dlg.showModal();
 }
 
-/* ---------- guided session ----------
-   START: pick exercise, length and a breathing pattern. A bubble paces the breath while the ring fills
-   with the session. The run lives in localStorage, so a sleeping screen or a reload doesn't lose it.
-   FINISH (or the chime at the end) opens the entry form prefilled with the exercise, time and duration. */
+/* ---------- guided workout ----------
+   START: pick a day (push / pull / legs / cardio) and its exercises. Then log set by set; each set starts a
+   rest timer where a bubble paces the breath. Cardio gets a stopwatch and a distance. FINISH writes one entry
+   per exercise (consecutive identical sets are grouped, so a top set plus back-offs stay separate rows).
+   The workout lives in localStorage, so a sleeping screen or a reload doesn't lose it. */
+const DAYS=['PUSH','PULL','LEGS','CARDIO'],RESTS=[60,90,120,180];
 let R=null,RI=0,RA=0,WL=null,AC=null;
 try{R=JSON.parse(localStorage.getItem(RUN))}catch(e){}
 const keepRun=()=>{try{localStorage.setItem(RUN,JSON.stringify(R))}catch(e){}};
-const elapsed=()=>(R.paused??Date.now())-R.t0;
-// Esc must not drop a session in progress
+const pref=()=>{try{return JSON.parse(localStorage.getItem(RUN+'.pref'))||{}}catch(e){return {}}};
+const setPref=p=>{try{localStorage.setItem(RUN+'.pref',JSON.stringify({...pref(),...p}))}catch(e){}};
+// Esc must not drop a workout in progress
 dlg.addEventListener('cancel',e=>{if(R)e.preventDefault()});
 function chime(){
   try{
@@ -479,8 +507,8 @@ function chime(){
   }catch(e){}
 }
 async function wake(on){try{if(on&&!WL){WL=await navigator.wakeLock?.request('screen');WL?.addEventListener('release',()=>WL=null)}else if(!on&&WL){WL.release();WL=null}}catch(e){}}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&R&&R.done==null)wake(true)});
-// where the bubble is at ms into the session: cue, seconds left in the phase, scale (.45 empty – 1 full)
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&R)wake(true)});
+// where the bubble is at ms into the rest: cue, seconds left in the phase, scale (.45 empty – 1 full)
 function breath(ms){
   const P=PACE[R.pat]||PACE['Calm 4-6'];let x=ms/1000%P.reduce((a,p)=>a+p[1],0),s=.45;
   for(const[c,d]of P){
@@ -491,65 +519,140 @@ function breath(ms){
   return {c:'',left:0,s};
 }
 function clearRun(){clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}wake(false)}
+const cms=x=>x.acc+(x.t0?Date.now()-x.t0:0);
+const unit=x=>x.type==='W'?' '+S.wu:'';
+// what you did the last day you trained this exercise, e.g. "3×5 @ 100 lb · 1×8 @ 80 lb"
+function lastTxt(ex){
+  const k=exk(ex),E=S.log.filter(e=>exk(e.ex)===k);if(!E.length)return 'First time — sets you log become the baseline';
+  const day=E.reduce((a,e)=>{const d=ymd(new Date(e.at));return d>a?d:a},''),D=E.filter(e=>ymd(new Date(e.at))===day).sort((a,b)=>a.at-b.at);
+  return `Last (${dlabel(day)}): `+D.map(e=>e.type==='C'?`${n1(e.dist)} ${S.du} in ${fm(e.mins)}`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:''}`).join(' · ');
+}
+// start a set from the last one this workout, else the top row of last time
+function nextSet(x){
+  if(x.sets.length)return x.sets[x.sets.length-1];
+  const k=exk(x.ex),E=S.log.filter(e=>exk(e.ex)===k&&e.type===x.type).sort((a,b)=>b.at-a.at)[0];
+  return E?{reps:E.reps,load:E.load}:{reps:x.type==='B'?10:8,load:''};
+}
+const item=ex=>({ex,type:xtype(ex)||'W',sets:[],t0:null,acc:0,dist:'',at:null});
 
 function startForm(){
-  const last=S.log.reduce((a,b)=>!a||b.at>a.at?b:a,null),names=[...new Set([...S.log.map(x=>x.ex.trim()),...PRESET])];
-  let pat='Calm 4-6';try{pat=localStorage.getItem(RUN+'.pat')||pat}catch(e){}
-  dlg.innerHTML=`<form id="sf"><h3>START SESSION</h3>
+  const P=pref(),last=P.day,day=last&&last!=='CARDIO'?DAYS[(DAYS.indexOf(last)+1)%3]:'PUSH';
+  let D=day,sel=[...PICK[D]];
+  dlg.innerHTML=`<form id="sf"><h3>START WORKOUT</h3>
+  <div class="chips" id="dy">${DAYS.map(d=>`<button type="button" data-d="${d}">${d}</button>`).join('')}</div>
+  <div id="xs"></div>
   <div class="fgrid">
-   <label>Exercise<input name="ex" list="exs" required autocomplete="off" placeholder="Run" value="${esc(last?.ex||'')}"></label>
-   <label>Type<select name="type">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}"${k===(last?.type||'W')?' selected':''}>${v}</option>`).join('')}</select></label>
+   <label>Rest between sets<select name="rest">${RESTS.map(r=>`<option value="${r}"${r===(P.rest||90)?' selected':''}>${fm(r/60)}</option>`).join('')}</select></label>
+   <label>Breathing during rest<select name="pat">${Object.keys(PACE).map(k=>`<option${k===(P.pat||'Calm 4-6')?' selected':''}>${k}</option>`).join('')}</select></label>
   </div>
-  <label>Breathing<select name="pat">${Object.keys(PACE).map(k=>`<option${k===pat?' selected':''}>${k}</option>`).join('')}</select></label>
-  <p class="k" style="margin-top:10px">Minutes</p>
-  <div class="chips">${[5,10,15,20,30].map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="">OPEN</button><input name="mins" type="number" min="0" step="any" placeholder="open" aria-label="Minutes"></div>
-  <datalist id="exs">${names.map(a=>`<option value="${esc(a)}">`).join('')}</datalist>
-  <div class="fa2"><span class="dim">Breathe with the bubble</span><button type="button" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
-  const f=$('#sf'),e=f.elements;
-  const mark=()=>f.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===String(+e.mins.value||'')));
-  f.addEventListener('click',ev=>{const b=ev.target.closest('[data-m]');if(b){e.mins.value=b.dataset.m;mark()}});
-  f.addEventListener('input',mark);mark();
+  <div class="fa2"><span class="dim" id="cnt"></span><button type="button" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
+  const f=$('#sf');
+  const paint=()=>{
+    f.querySelectorAll('[data-d]').forEach(b=>b.classList.toggle('on',b.dataset.d===D));
+    $('#xs').innerHTML=Object.entries(LIB[D]).map(([t,L])=>`<p class="k">${TYPES[t]}</p><div class="chips">${L.map(x=>`<button type="button" data-e="${esc(x)}"${sel.includes(x)?' class="on"':''}>${esc(x)}</button>`).join('')}</div>`).join('');
+    $('#cnt').textContent=`${sel.length} exercise${sel.length===1?'':'s'}`;
+  };
+  f.addEventListener('click',ev=>{
+    const d=ev.target.closest('[data-d]'),x=ev.target.closest('[data-e]');
+    if(d&&d.dataset.d!==D){D=d.dataset.d;sel=[...PICK[D]];paint()}
+    if(x){const n=x.dataset.e;sel=sel.includes(n)?sel.filter(y=>y!==n):[...sel,n];paint()}
+  });
+  paint();
   f.addEventListener('submit',ev=>{
-    ev.preventDefault();const now=Date.now();
-    try{localStorage.setItem(RUN+'.pat',e.pat.value)}catch(x){}
-    R={ex:e.ex.value.trim(),type:e.type.value,pat:e.pat.value,target:Math.max(0,+e.mins.value||0),start:now,t0:now,paused:null,done:null};
-    chime();keepRun();runView();
+    ev.preventDefault();if(!sel.length){$('#cnt').innerHTML='<b class="neg">Pick at least one exercise</b>';return}
+    const rest=+f.elements.rest.value,pat=f.elements.pat.value;setPref({rest,pat});
+    R={day:D,list:sel.map(item),cur:0,start:Date.now(),rest:null,restSec:rest,pat,fin:false};
+    chime();keepRun();draw();
   });
   dlg.showModal();
 }
-function runView(){
-  dlg.innerHTML=`<div><h3>${esc(R.ex).toUpperCase()} // ${R.pat.toUpperCase()}</h3>
-  <div class="bub" id="bub"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="rt" cx="120" cy="120" r="118"/><circle class="rp" id="pg" cx="120" cy="120" r="118" pathLength="100" stroke-dasharray="0 100"/></svg>
-   <div class="ball" id="ball"></div><div class="cue" id="pc" aria-live="polite"></div></div>
-  <div class="clock" id="clk"></div>
-  <p class="dim c">${R.target?`${fm(R.target)} session · ends with a chime`:'Open session · finish when ready'}</p>
-  <div class="fa2"><button type="button" id="rd">DISCARD</button><button type="button" id="rp">${R.paused?'RESUME':'PAUSE'}</button><button type="button" class="pri" id="rf">FINISH</button></div></div>`;
-  const tick=()=>{
-    const el=elapsed()/60000;if(R.target&&el>=R.target)return endRun(true);
-    $('#clk').textContent=fm(R.target?R.target-el:el);$('#clk').classList.toggle('held',!!R.paused);$('#bub').classList.toggle('held',!!R.paused);
-    if(R.target)$('#pg').setAttribute('stroke-dasharray',`${(el/R.target*100).toFixed(2)} 100`);
-    const b=breath(elapsed());$('#pc').innerHTML=R.paused?'PAUSED':`${b.c}<em>${b.left}</em>`;
-  };
-  // the bubble moves every frame; the clock and cue only need a few updates a second
-  const anim=()=>{const el=$('#ball');if(!R||R.done!=null||!el)return;el.style.transform=`scale(${breath(elapsed()).s.toFixed(3)})`;RA=requestAnimationFrame(anim)};
-  cancelAnimationFrame(RA);RA=requestAnimationFrame(anim);
-  $('#rp').onclick=()=>{
-    if(R.paused){R.t0+=Date.now()-R.paused;R.paused=null}else R.paused=Date.now();
-    $('#rp').textContent=R.paused?'RESUME':'PAUSE';keepRun();tick();
-  };
-  $('#rf').onclick=()=>endRun(false);
-  $('#rd').onclick=()=>{if(elapsed()<60000||confirm('Discard this session?')){clearRun();dlg.close()}};
-  clearInterval(RI);RI=setInterval(tick,250);tick();
+
+function draw(){
+  clearInterval(RI);cancelAnimationFrame(RA);
+  if(R.fin)finishView();else if(R.rest)restView();else workView();
   if(!dlg.open)dlg.showModal();
   wake(true);
 }
-function endRun(auto){
-  clearInterval(RI);cancelAnimationFrame(RA);RI=0;
-  R.done=auto?R.target:Math.max(.1,Math.round(elapsed()/6000)/10);
-  if(auto){chime();navigator.vibrate?.([200,120,200])}
-  keepRun();wake(false);wrap();
+function workView(){
+  const x=R.list[R.cur],C=x.type==='C',ns=nextSet(x);
+  const tab=(y,i)=>`<button type="button" data-x="${i}"${i===R.cur?' class="on"':''}>${esc(y.ex)}<em>${y.type==='C'?(cms(y)?fm(cms(y)/60000):'—'):`${y.sets.length} set${y.sets.length===1?'':'s'}`}</em></button>`;
+  dlg.innerHTML=`<div><h3>${R.day} DAY <span class="dim" id="wt"></span></h3>
+  <div class="xl">${R.list.map(tab).join('')}<button type="button" id="xa">+ ADD<em>exercise</em></button></div>
+  <div id="xr" class="chips" hidden><input id="xn" list="exs" placeholder="Exercise" autocomplete="off" style="flex:1;width:auto"><button type="button" id="xk">ADD</button>
+   <datalist id="exs">${[...new Set([...S.log.map(e=>e.ex.trim()),...PRESET])].map(a=>`<option value="${esc(a)}">`).join('')}</datalist></div>
+  <p class="h">${esc(x.ex)}</p><p class="dim">${lastTxt(x.ex)}</p>
+  ${C?`<div class="bigclk" id="cc"></div>
+  <div class="fgrid"><label>Distance (${S.du})<input id="cd" type="number" min="0" step="any" value="${x.dist}"></label><button type="button" class="${x.t0?'':'pri'}" id="cs" style="align-self:end">${x.t0?'PAUSE':cms(x)?'RESUME':'START'}</button></div>`
+  :`<ol class="sets">${x.sets.map((s,j)=>`<li>${s.reps} ${x.type==='W'?`× ${n1(s.load)}${unit(x)}`:'reps'} <button type="button" data-s="${j}" aria-label="Remove set">X</button></li>`).join('')}</ol>
+  <div class="fgrid"><label>Reps<input id="ir" type="number" inputmode="numeric" min="1" step="1" value="${ns.reps||''}"></label>
+   ${x.type==='W'?`<label>Load (${S.wu})<input id="il" type="number" inputmode="decimal" min="0" step="any" value="${ns.load??''}"></label>`:''}</div>
+  <button type="button" class="pri" id="ls" style="width:100%">LOG SET ${x.sets.length+1} · REST ${fm(R.restSec/60)}</button>`}
+  <div class="fa2"><button type="button" id="rd">DISCARD</button>${R.cur<R.list.length-1?'<button type="button" id="nx">NEXT &gt;</button>':''}<button type="button" class="pri" id="fn">FINISH</button></div></div>`;
+  const tick=()=>{$('#wt').textContent='· '+fm((Date.now()-R.start)/60000);if(C)$('#cc').textContent=fm(cms(x)/60000)};
+  tick();RI=setInterval(tick,250);
+  dlg.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{R.cur=+b.dataset.x;keepRun();draw()});
+  dlg.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{x.sets.splice(+b.dataset.s,1);keepRun();draw()});
+  $('#xa').onclick=()=>{$('#xr').hidden=false;$('#xn').focus()};
+  $('#xk').onclick=()=>{const n=$('#xn').value.trim();if(!n)return;R.list.push(item(PRESET.find(p=>exk(p)===exk(n))||n));R.cur=R.list.length-1;keepRun();draw()};
+  if(C){
+    $('#cd').oninput=e=>{x.dist=e.target.value;keepRun()};
+    $('#cs').onclick=()=>{if(x.t0){x.acc+=Date.now()-x.t0;x.t0=null}else{x.t0=Date.now();x.at??=x.t0}keepRun();draw()};
+  }else $('#ls').onclick=()=>{
+    const reps=Math.round(+$('#ir').value),load=x.type==='W'?+$('#il').value:0;
+    if(!(reps>0)||(x.type==='W'&&$('#il').value===''))return toast('Enter reps'+(x.type==='W'?' and load':''));
+    x.sets.push({reps,load,at:Date.now()});R.rest={t0:Date.now(),len:R.restSec};keepRun();draw();
+  };
+  $('#nx')&&($('#nx').onclick=()=>{R.cur++;keepRun();draw()});
+  $('#fn').onclick=()=>{R.list.forEach(y=>{if(y.t0){y.acc+=Date.now()-y.t0;y.t0=null}});R.fin=true;keepRun();draw()};
+  $('#rd').onclick=()=>{if(confirm('Discard this workout? Nothing will be logged.')){clearRun();dlg.close()}};
 }
-const wrap=()=>entryForm(null,{ex:R.ex,type:R.type,at:R.start,mins:R.done});
+function restView(){
+  const x=R.list[R.cur];
+  dlg.innerHTML=`<div><h3>REST // ${esc(x.ex).toUpperCase()} · SET ${x.sets.length} DONE</h3>
+  <div class="bub" id="bub"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="rt" cx="120" cy="120" r="118"/><circle class="rp" id="pg" cx="120" cy="120" r="118" pathLength="100" stroke-dasharray="0 100"/></svg>
+   <div class="ball" id="ball"></div><div class="cue" id="pc" aria-live="polite"></div></div>
+  <div class="clock" id="clk"></div><p class="dim c">${R.pat} · ends with a chime</p>
+  <div class="fa2"><button type="button" id="r30">+30s</button><button type="button" class="pri" id="rs">SKIP REST</button></div></div>`;
+  const el=()=>Date.now()-R.rest.t0;
+  const done=()=>{R.rest=null;keepRun();draw()};
+  const tick=()=>{
+    const left=R.rest.len-el()/1000;if(left<=0){chime();navigator.vibrate?.([200,120,200]);return done()}
+    $('#clk').textContent=fm(left/60);$('#pg').setAttribute('stroke-dasharray',`${(el()/10/R.rest.len).toFixed(2)} 100`);
+    const b=breath(el());$('#pc').innerHTML=`${b.c}<em>${b.left}</em>`;
+  };
+  // the bubble moves every frame; the clock and cue only need a few updates a second
+  const anim=()=>{const b=$('#ball');if(!R||!R.rest||!b)return;b.style.transform=`scale(${breath(el()).s.toFixed(3)})`;RA=requestAnimationFrame(anim)};
+  RA=requestAnimationFrame(anim);
+  $('#r30').onclick=()=>{R.rest.len+=30;keepRun();tick()};
+  $('#rs').onclick=done;
+  tick();RI=setInterval(tick,250);
+}
+// one entry per run of identical sets; cardio needs time on the clock
+function entries(){
+  const out=[];
+  R.list.forEach(x=>{
+    if(x.type==='C'){const m=cms(x)/60000;if(m>0)out.push({ex:x.ex,type:'C',at:x.at,sets:0,reps:0,load:0,dist:+x.dist||0,mins:r2(m)});return}
+    x.sets.forEach(s=>{const p=out[out.length-1];
+      if(p&&p.ex===x.ex&&p.reps===s.reps&&p.load===s.load)p.sets++;
+      else out.push({ex:x.ex,type:x.type,at:s.at,sets:1,reps:s.reps,load:s.load,dist:0,mins:0})});
+  });
+  return out;
+}
+function finishView(){
+  const E=entries(),tv=E.reduce((a,e)=>a+vol(e),0),sets=E.reduce((a,e)=>a+e.sets,0);
+  dlg.innerHTML=`<form id="ff"><h3>${R.day} DAY DONE // ${fm((Date.now()-R.start)/60000)}</h3>
+  <div class="tw"><table class="sm" style="min-width:0"><tbody>${E.map(e=>`<tr><td>${esc(e.ex)}</td><td class="r">${e.type==='C'?`${n1(e.dist)} ${S.du} · ${fm(e.mins)}`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:''}`}</td></tr>`).join('')||'<tr><td class="dim">Nothing logged yet_</td></tr>'}</tbody></table></div>
+  <p class="dim" style="margin:10px 0">${sets} sets${tv?` · ${n0(tv)} ${S.wu} volume`:''}</p>
+  <div class="fgrid"><label>Session RPE (1–10)<input name="rpe" type="number" min="1" max="10" step="0.5"></label></div>
+  <label>Note<textarea name="note" rows="3" placeholder="Sleep. Energy. What moved well."></textarea></label>
+  <div class="fa2"><button type="button" id="bk">&lt; BACK</button><button class="pri"${E.length?'':' disabled'}>SAVE</button></div></form>`;
+  $('#bk').onclick=()=>{R.fin=false;keepRun();draw()};
+  $('#ff').addEventListener('submit',ev=>{
+    ev.preventDefault();const el=ev.target.elements,rpe=el.rpe.value===''?null:+el.rpe.value,note=el.note.value.trim();
+    E.forEach((e,i)=>S.log.push({id:uid(),...e,rpe,note:i?'':note}));
+    setPref({day:R.day});const at=R.start;clearRun();save();dlg.close();setMonth(at);render();toast(`Logged ${E.length} entr${E.length===1?'y':'ies'}`);
+  });
+}
 function noteForm(day){
   dlg.innerHTML=`<form id="nf"><h3>NOTES // ${dlabel(day)}</h3><textarea name="n" rows="10" placeholder="Sleep. Energy. What moved well. What to change.">${esc(S.notes[day]||'')}</textarea>
   <div class="fa2"><button type="button" data-a="x">CANCEL</button><button class="pri">SAVE</button></div></form>`;
@@ -621,7 +724,7 @@ function sample(){
 
 /* ---------- events ---------- */
 const ACT={
-  add:()=>entryForm(),go:()=>R?(R.done==null?runView():wrap()):startForm(),imp:()=>$('#file').click(),x:()=>dlg.close(),sample,csv:exportCSV,
+  add:()=>entryForm(),go:()=>R?draw():startForm(),imp:()=>$('#file').click(),x:()=>dlg.close(),sample,csv:exportCSV,
   note:()=>noteForm(U.range in RANGES?ymd(new Date()):U.range),
   bak:()=>dl(`training-backup-${ymd(new Date())}.json`,JSON.stringify(S),'application/json'),
   clear:()=>{if(confirm('Delete ALL entries and notes on this device?')){S={...S,log:[],notes:{}};save();U.range='all';boot()}},
@@ -651,7 +754,7 @@ $('#file').addEventListener('change',async e=>{
 
 function boot(){setMonth(S.log.length?Math.max(...S.log.map(t=>t.at)):Date.now());render()}
 boot();
-if(R)R.done==null?runView():wrap();
+if(R)draw();
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
 </body>
