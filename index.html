@@ -136,6 +136,7 @@ textarea{resize:vertical}
 .xl em{font-style:normal;font-size:10px;color:var(--dim)}
 .xl .on{border-color:var(--amber);color:var(--amber)}
 .sets{margin:10px 0 12px;padding-left:22px}.sets li{padding:3px 0}.sets button{padding:0 6px;font-size:10px;margin-left:8px}
+.lnk{border:0;padding:0;background:none;color:var(--amber);text-decoration:underline;font-size:inherit;letter-spacing:0}
 .bigclk{font-size:48px;font-weight:600;text-align:center;margin:14px 0}
 #xs .chips button{font-size:11px;padding:5px 8px}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:90vw;background:var(--panel);border:1px solid var(--amber);color:var(--amber);padding:8px 14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
@@ -177,27 +178,45 @@ textarea{resize:vertical}
 'use strict';
 const KEY='isx.training.v1', RUN='isx.training.run', PAGE=20;
 const RANGES={today:'Today',week:'This week',month:'This month',all:'All time'};
-const TYPES={W:'Weighted',B:'Bodyweight',C:'Cardio'};
+const TYPES={W:'Weighted',B:'Bodyweight',C:'Cardio',S:'Stretch'};
 // exercise library for the workout builder, by training day and type
 const LIB={
   PUSH:{
     W:['Bench Press','Incline Bench Press','Dumbbell Bench Press','Incline Dumbbell Press','Close-Grip Bench Press','Overhead Press','Seated Dumbbell Press','Arnold Press','Landmine Press','Cable Fly','Pec Deck','Lateral Raise','Cable Lateral Raise','Triceps Pushdown','Overhead Triceps Extension','Skull Crusher'],
-    B:['Dip','Push-up','Diamond Push-up','Pike Push-up','Handstand Push-up']},
+    B:['Dip','Push-up','Diamond Push-up','Pike Push-up','Handstand Push-up'],
+    S:['Doorway Chest Stretch','Cross-Body Shoulder Stretch','Overhead Triceps Stretch','Sleeper Stretch','Wrist Flexor Stretch','Thread the Needle']},
   PULL:{
     W:['Deadlift','Rack Pull','Barbell Row','Pendlay Row','Dumbbell Row','Seated Cable Row','Chest-Supported Row','T-Bar Row','Lat Pulldown','Straight-Arm Pulldown','Face Pull','Rear Delt Fly','Shrug','Barbell Curl','Dumbbell Curl','Hammer Curl','Preacher Curl','Cable Curl'],
-    B:['Pull-up','Chin-up','Inverted Row','Hanging Leg Raise']},
+    B:['Pull-up','Chin-up','Inverted Row','Hanging Leg Raise'],
+    S:['Kneeling Lat Stretch','Dead Hang','Child\'s Pose','Biceps Wall Stretch','Cat-Cow','Upper Back Stretch','Neck Side Bend']},
   LEGS:{
     W:['Back Squat','Front Squat','Hack Squat','Leg Press','Romanian Deadlift','Bulgarian Split Squat','Walking Lunge','Goblet Squat','Hip Thrust','Good Morning','Leg Extension','Leg Curl','Seated Leg Curl','Adductor Machine','Standing Calf Raise','Seated Calf Raise'],
-    B:['Pistol Squat','Nordic Curl','Jump Squat','Step-up','Glute Bridge']},
+    B:['Pistol Squat','Nordic Curl','Jump Squat','Step-up','Glute Bridge'],
+    S:['Standing Quad Stretch','Lying Hamstring Stretch','Pigeon Pose','Kneeling Hip Flexor Stretch','Butterfly Stretch','90/90 Hip Stretch','Wall Calf Stretch']},
   CARDIO:{
-    C:['Run','Treadmill','Incline Walk','Walk','Hike','Bike','Spin Bike','Assault Bike','Row Erg','Ski Erg','Elliptical','Stair Climber','Swim','Jump Rope','Sled Push']}
+    C:['Run','Treadmill','Incline Walk','Walk','Hike','Bike','Spin Bike','Assault Bike','Row Erg','Ski Erg','Elliptical','Stair Climber','Swim','Jump Rope','Sled Push'],
+    S:['Wall Calf Stretch','Soleus Calf Stretch','Standing Quad Stretch','Kneeling Hip Flexor Stretch','Standing Hamstring Stretch','Figure-Four Stretch','IT Band Stretch']},
+  STRETCH:{S:[]}
 };
+// the complete stretch library, by body area (STRETCH day); each side counts as one hold
+const STRETCHES={
+  'Neck':['Neck Side Bend','Neck Rotation','Chin Tuck','Levator Scapulae Stretch'],
+  'Chest & shoulders':['Doorway Chest Stretch','Wall Pec Stretch','Behind-Back Clasp','Cross-Body Shoulder Stretch','Sleeper Stretch','Thread the Needle','Puppy Pose'],
+  'Arms & wrists':['Overhead Triceps Stretch','Biceps Wall Stretch','Wrist Flexor Stretch','Wrist Extensor Stretch','Forearm Prayer Stretch'],
+  'Back & lats':['Child\'s Pose','Kneeling Lat Stretch','Dead Hang','Cat-Cow','Upper Back Stretch','Seated Spinal Twist','Supine Spinal Twist','Cobra Stretch','Sphinx Pose','Knees-to-Chest'],
+  'Hips & glutes':['Kneeling Hip Flexor Stretch','Couch Stretch','Pigeon Pose','Figure-Four Stretch','90/90 Hip Stretch','Butterfly Stretch','Frog Stretch','Lizard Pose','Happy Baby'],
+  'Hamstrings & quads':['Standing Quad Stretch','Lying Quad Stretch','Standing Hamstring Stretch','Lying Hamstring Stretch','Seated Forward Fold','Standing Forward Fold','Wide-Leg Forward Fold','Side Lunge Stretch','IT Band Stretch'],
+  'Calves & ankles':['Wall Calf Stretch','Soleus Calf Stretch','Downward Dog','Knee-to-Wall Ankle Stretch','Toe Stretch'],
+  'Dynamic warm-up':['World\'s Greatest Stretch','Spiderman Lunge','Inchworm','Leg Swings','Arm Circles','Hip Circles']
+};
+LIB.STRETCH.S=Object.values(STRETCHES).flat();
 // what a new workout of each day starts with selected
 const PICK={
   PUSH:['Bench Press','Overhead Press','Incline Dumbbell Press','Lateral Raise','Triceps Pushdown'],
   PULL:['Deadlift','Pull-up','Barbell Row','Face Pull','Dumbbell Curl'],
   LEGS:['Back Squat','Romanian Deadlift','Leg Press','Leg Curl','Standing Calf Raise'],
-  CARDIO:['Run']
+  CARDIO:['Run'],
+  STRETCH:['Neck Side Bend','Doorway Chest Stretch','Cross-Body Shoulder Stretch','Child\'s Pose','Kneeling Hip Flexor Stretch','Pigeon Pose','Lying Hamstring Stretch','Wall Calf Stretch']
 };
 const XT={};for(const d in LIB)for(const t in LIB[d])LIB[d][t].forEach(x=>XT[x]=t);
 const PRESET=Object.keys(XT);
@@ -241,9 +260,9 @@ const pm=s=>{s=String(s??'').trim();if(!s)return 0;if(s.includes(':')){const p=s
 const fm=m=>{const t=Math.round(m*60);return `${Math.floor(t/60)}:${pad(t%60)}`};
 // performance, the number progress is judged on:
 //   weighted -> estimated 1RM (Epley) · bodyweight -> reps per set · cardio -> speed
-const perf=e=>e.type==='C'?(e.mins>0?e.dist/e.mins*60:0):e.type==='B'?e.reps:e.reps>1?e.load*(1+e.reps/30):e.load;
+const perf=e=>e.type==='C'?(e.mins>0?e.dist/e.mins*60:0):e.type==='B'||e.type==='S'?e.reps:e.reps>1?e.load*(1+e.reps/30):e.load;
 const vol=e=>e.type==='W'?e.sets*e.reps*e.load:0;
-const perfT=e=>{const p=perf(e);return e.type==='C'?`${p.toFixed(2)} ${S.du}/h`:e.type==='B'?`${p} reps`:`${n1(p)} ${S.wu}`};
+const perfT=e=>{const p=perf(e);return e.type==='C'?`${p.toFixed(2)} ${S.du}/h`:e.type==='B'?`${p} reps`:e.type==='S'?`${p}s hold`:`${n1(p)} ${S.wu}`};
 
 /* ---------- state ---------- */
 let S=load();
@@ -374,7 +393,7 @@ function table(T){
   U.page=Math.min(Math.max(U.page,0),pages-1);
   const body=rows.slice(U.page*PAGE,(U.page+1)*PAGE).map(e=>{const c=e.type==='C';return `<tr>
    <td>${tfmt(e.at)}</td><td><b>${esc(e.ex)}</b>${e.pr?'<span class="pr">PR</span>':''}</td><td class="dim">${TYPES[e.type]}</td>
-   <td class="r">${c?na:e.sets}</td><td class="r">${c?na:e.reps}</td><td class="r">${e.type==='W'?n1(e.load)+' '+S.wu:na}</td>
+   <td class="r">${c?na:e.sets}</td><td class="r">${c?na:e.reps+(e.type==='S'?'s':'')}</td><td class="r">${e.type==='W'?n1(e.load)+' '+S.wu:na}</td>
    <td class="r">${c?+e.dist.toFixed(2)+' '+S.du:na}</td><td>${c?dur(e.mins*60):na}</td><td class="r">${e.rpe??na}</td>
    <td class="r">${perfT(e)}</td>
    <td class="r">${e.d==null?`<span class="dim">${e.base?'BASE':'—'}</span>`:`<b class="${cls(e.d)}">${pc(e.d,1)}</b>`}</td>
@@ -449,8 +468,8 @@ function entryForm(t){
    <label>Type<select name="type">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}"${k===d.type?' selected':''}>${v}</option>`).join('')}</select></label>
    <label>When<input name="when" type="datetime-local" required value="${dtl(d.at).slice(0,16)}"></label>
    <label>RPE (1–10)<input name="rpe" type="number" min="1" max="10" step="0.5" value="${d.rpe??''}"></label>
-   <label data-t="WB">Sets<input name="sets" type="number" min="1" step="1" value="${d.sets||''}"></label>
-   <label data-t="WB">Reps per set<input name="reps" type="number" min="1" step="1" value="${d.reps||''}"></label>
+   <label data-t="WBS"><span id="lsets">Sets</span><input name="sets" type="number" min="1" step="1" value="${d.sets||''}"></label>
+   <label data-t="WBS"><span id="lreps">Reps per set</span><input name="reps" type="number" min="1" step="1" value="${d.reps||''}"></label>
    <label data-t="W">Load (${S.wu})<input name="load" type="number" min="0" step="any" value="${d.type==='W'?d.load:''}"></label>
    <label data-t="C">Distance (${S.du})<input name="dist" type="number" min="0" step="any" value="${d.dist||''}"></label>
    <label data-t="C">Time (mm:ss)<input name="mins" inputmode="numeric" placeholder="27:30" value="${d.mins?fm(d.mins):''}"></label>
@@ -471,6 +490,7 @@ function entryForm(t){
       else if(xtype(e.ex.value))e.type.value=xtype(e.ex.value);
     }
     f.querySelectorAll('[data-t]').forEach(l=>l.hidden=!l.dataset.t.includes(e.type.value));
+    const st=e.type.value==='S';$('#lsets').textContent=st?'Holds':'Sets';$('#lreps').textContent=st?'Seconds per hold':'Reps per set';
     const v=read();if(!ok(v)){$('#pv').innerHTML='';return}
     const p=perf(v),pb=prevBest(v.ex,v.type,ymd(new Date(v.at)),t&&t.id);
     $('#pv').innerHTML=`${v.type==='W'?'e1RM ':''}${perfT(v)} · `+(pb?`<b class="${cls(p-pb)}">${pc((p-pb)/pb*100,1)}</b> vs last`:'<i class="dim">baseline</i>');
@@ -490,7 +510,7 @@ function entryForm(t){
    rest timer where a bubble paces the breath. Cardio gets a stopwatch and a distance. FINISH writes one entry
    per exercise (consecutive identical sets are grouped, so a top set plus back-offs stay separate rows).
    The workout lives in localStorage, so a sleeping screen or a reload doesn't lose it. */
-const DAYS=['PUSH','PULL','LEGS','CARDIO'],RESTS=[60,90,120,180];
+const DAYS=['PUSH','PULL','LEGS','CARDIO','STRETCH'],PPL=DAYS.slice(0,3),RESTS=[60,90,120,180],HOLDS=[20,30,45,60];
 let R=null,RI=0,RA=0,WL=null,AC=null;
 try{R=JSON.parse(localStorage.getItem(RUN))}catch(e){}
 const keepRun=()=>{try{localStorage.setItem(RUN,JSON.stringify(R))}catch(e){}};
@@ -525,18 +545,18 @@ const unit=x=>x.type==='W'?' '+S.wu:'';
 function lastTxt(ex){
   const k=exk(ex),E=S.log.filter(e=>exk(e.ex)===k);if(!E.length)return 'First time — sets you log become the baseline';
   const day=E.reduce((a,e)=>{const d=ymd(new Date(e.at));return d>a?d:a},''),D=E.filter(e=>ymd(new Date(e.at))===day).sort((a,b)=>a.at-b.at);
-  return `Last (${dlabel(day)}): `+D.map(e=>e.type==='C'?`${n1(e.dist)} ${S.du} in ${fm(e.mins)}`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:''}`).join(' · ');
+  return `Last (${dlabel(day)}): `+D.map(e=>e.type==='C'?`${n1(e.dist)} ${S.du} in ${fm(e.mins)}`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:e.type==='S'?'s':''}`).join(' · ');
 }
 // start a set from the last one this workout, else the top row of last time
 function nextSet(x){
   if(x.sets.length)return x.sets[x.sets.length-1];
   const k=exk(x.ex),E=S.log.filter(e=>exk(e.ex)===k&&e.type===x.type).sort((a,b)=>b.at-a.at)[0];
-  return E?{reps:E.reps,load:E.load}:{reps:x.type==='B'?10:8,load:''};
+  return E?{reps:E.reps,load:E.load}:{reps:x.type==='S'?30:x.type==='B'?10:8,load:''};
 }
 const item=ex=>({ex,type:xtype(ex)||'W',sets:[],t0:null,acc:0,dist:'',at:null});
 
 function startForm(){
-  const P=pref(),last=P.day,day=last&&last!=='CARDIO'?DAYS[(DAYS.indexOf(last)+1)%3]:'PUSH';
+  const P=pref(),last=P.day,day=PPL.includes(last)?PPL[(PPL.indexOf(last)+1)%3]:'PUSH';
   let D=day,sel=[...PICK[D]];
   dlg.innerHTML=`<form id="sf"><h3>START WORKOUT</h3>
   <div class="chips" id="dy">${DAYS.map(d=>`<button type="button" data-d="${d}">${d}</button>`).join('')}</div>
@@ -549,7 +569,8 @@ function startForm(){
   const f=$('#sf');
   const paint=()=>{
     f.querySelectorAll('[data-d]').forEach(b=>b.classList.toggle('on',b.dataset.d===D));
-    $('#xs').innerHTML=Object.entries(LIB[D]).map(([t,L])=>`<p class="k">${TYPES[t]}</p><div class="chips">${L.map(x=>`<button type="button" data-e="${esc(x)}"${sel.includes(x)?' class="on"':''}>${esc(x)}</button>`).join('')}</div>`).join('');
+    const G=D==='STRETCH'?Object.entries(STRETCHES):Object.entries(LIB[D]).map(([t,L])=>[t==='S'?'Stretch · cooldown':TYPES[t],L]);
+    $('#xs').innerHTML=G.map(([t,L])=>`<p class="k">${t}</p><div class="chips">${L.map(x=>`<button type="button" data-e="${esc(x)}"${sel.includes(x)?' class="on"':''}>${esc(x)}</button>`).join('')}</div>`).join('');
     $('#cnt').textContent=`${sel.length} exercise${sel.length===1?'':'s'}`;
   };
   f.addEventListener('click',ev=>{
@@ -569,13 +590,13 @@ function startForm(){
 
 function draw(){
   clearInterval(RI);cancelAnimationFrame(RA);
-  if(R.fin)finishView();else if(R.rest)restView();else workView();
+  if(R.fin)finishView();else if(R.hold)holdView();else if(R.rest)restView();else workView();
   if(!dlg.open)dlg.showModal();
   wake(true);
 }
 function workView(){
-  const x=R.list[R.cur],C=x.type==='C',ns=nextSet(x);
-  const tab=(y,i)=>`<button type="button" data-x="${i}"${i===R.cur?' class="on"':''}>${esc(y.ex)}<em>${y.type==='C'?(cms(y)?fm(cms(y)/60000):'—'):`${y.sets.length} set${y.sets.length===1?'':'s'}`}</em></button>`;
+  const x=R.list[R.cur],C=x.type==='C',H=x.type==='S',ns=nextSet(x);
+  const tab=(y,i)=>`<button type="button" data-x="${i}"${i===R.cur?' class="on"':''}>${esc(y.ex)}<em>${y.type==='C'?(cms(y)?fm(cms(y)/60000):'—'):`${y.sets.length} ${y.type==='S'?'hold':'set'}${y.sets.length===1?'':'s'}`}</em></button>`;
   dlg.innerHTML=`<div><h3>${R.day} DAY <span class="dim" id="wt"></span></h3>
   <div class="xl">${R.list.map(tab).join('')}<button type="button" id="xa">+ ADD<em>exercise</em></button></div>
   <div id="xr" class="chips" hidden><input id="xn" list="exs" placeholder="Exercise" autocomplete="off" style="flex:1;width:auto"><button type="button" id="xk">ADD</button>
@@ -583,6 +604,11 @@ function workView(){
   <p class="h">${esc(x.ex)}</p><p class="dim">${lastTxt(x.ex)}</p>
   ${C?`<div class="bigclk" id="cc"></div>
   <div class="fgrid"><label>Distance (${S.du})<input id="cd" type="number" min="0" step="any" value="${x.dist}"></label><button type="button" class="${x.t0?'':'pri'}" id="cs" style="align-self:end">${x.t0?'PAUSE':cms(x)?'RESUME':'START'}</button></div>`
+  :H?`<ol class="sets">${x.sets.map((s,j)=>`<li>${s.reps}s hold <button type="button" data-s="${j}" aria-label="Remove hold">X</button></li>`).join('')}</ol>
+  <p class="k">Hold (seconds)</p>
+  <div class="chips" id="hc">${HOLDS.map(h=>`<button type="button" data-h="${h}"${h===ns.reps?' class="on"':''}>${h}</button>`).join('')}<input id="ih" type="number" inputmode="numeric" min="5" step="5" value="${ns.reps}" aria-label="Seconds"></div>
+  <button type="button" class="pri" id="hs" style="width:100%">START HOLD ${x.sets.length+1}</button>
+  <p class="dim" style="margin-top:8px">Each side counts as one hold. Ease into mild tension and breathe; never stretch into pain. <button type="button" class="lnk" id="hl">Log without timer</button></p>`
   :`<ol class="sets">${x.sets.map((s,j)=>`<li>${s.reps} ${x.type==='W'?`× ${n1(s.load)}${unit(x)}`:'reps'} <button type="button" data-s="${j}" aria-label="Remove set">X</button></li>`).join('')}</ol>
   <div class="fgrid"><label>Reps<input id="ir" type="number" inputmode="numeric" min="1" step="1" value="${ns.reps||''}"></label>
    ${x.type==='W'?`<label>Load (${S.wu})<input id="il" type="number" inputmode="decimal" min="0" step="any" value="${ns.load??''}"></label>`:''}</div>
@@ -594,7 +620,13 @@ function workView(){
   dlg.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{x.sets.splice(+b.dataset.s,1);keepRun();draw()});
   $('#xa').onclick=()=>{$('#xr').hidden=false;$('#xn').focus()};
   $('#xk').onclick=()=>{const n=$('#xn').value.trim();if(!n)return;R.list.push(item(PRESET.find(p=>exk(p)===exk(n))||n));R.cur=R.list.length-1;keepRun();draw()};
-  if(C){
+  if(H){
+    const ih=$('#ih'),mark=()=>dlg.querySelectorAll('[data-h]').forEach(b=>b.classList.toggle('on',+b.dataset.h===+ih.value));
+    dlg.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{ih.value=b.dataset.h;mark()});ih.oninput=mark;
+    const secs=()=>{const v=Math.round(+ih.value);if(!(v>0))toast('Enter seconds');return v>0?v:0};
+    $('#hs').onclick=()=>{const v=secs();if(!v)return;x.at??=Date.now();R.hold={t0:Date.now(),len:v};keepRun();draw()};
+    $('#hl').onclick=()=>{const v=secs();if(!v)return;x.sets.push({reps:v,load:0,at:Date.now()});keepRun();draw()};
+  }else if(C){
     $('#cd').oninput=e=>{x.dist=e.target.value;keepRun()};
     $('#cs').onclick=()=>{if(x.t0){x.acc+=Date.now()-x.t0;x.t0=null}else{x.t0=Date.now();x.at??=x.t0}keepRun();draw()};
   }else $('#ls').onclick=()=>{
@@ -627,6 +659,27 @@ function restView(){
   $('#rs').onclick=done;
   tick();RI=setInterval(tick,250);
 }
+function holdView(){
+  const x=R.list[R.cur];
+  dlg.innerHTML=`<div><h3>HOLD // ${esc(x.ex).toUpperCase()} · ${x.sets.length+1}</h3>
+  <div class="bub" id="bub"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="rt" cx="120" cy="120" r="118"/><circle class="rp" id="pg" cx="120" cy="120" r="118" pathLength="100" stroke-dasharray="0 100"/></svg>
+   <div class="ball" id="ball"></div><div class="cue" id="pc" aria-live="polite"></div></div>
+  <div class="clock" id="clk"></div><p class="dim c">Breathe into the stretch · ${R.pat}</p>
+  <div class="fa2"><button type="button" id="hx">CANCEL</button><button type="button" id="h15">+15s</button><button type="button" class="pri" id="hd">DONE</button></div></div>`;
+  const el=()=>Date.now()-R.hold.t0;
+  const log=secs=>{x.sets.push({reps:secs,load:0,at:R.hold.t0});R.hold=null;keepRun();draw()};
+  const tick=()=>{
+    const left=R.hold.len-el()/1000;if(left<=0){chime();navigator.vibrate?.([200,120,200]);return log(R.hold.len)}
+    $('#clk').textContent=fm(left/60);$('#pg').setAttribute('stroke-dasharray',`${(el()/10/R.hold.len).toFixed(2)} 100`);
+    const b=breath(el());$('#pc').innerHTML=`${b.c}<em>${b.left}</em>`;
+  };
+  const anim=()=>{const b=$('#ball');if(!R||!R.hold||!b)return;b.style.transform=`scale(${breath(el()).s.toFixed(3)})`;RA=requestAnimationFrame(anim)};
+  RA=requestAnimationFrame(anim);
+  $('#h15').onclick=()=>{R.hold.len+=15;keepRun();tick()};
+  $('#hd').onclick=()=>log(Math.max(1,Math.round(el()/1000)));
+  $('#hx').onclick=()=>{R.hold=null;keepRun();draw()};
+  tick();RI=setInterval(tick,250);
+}
 // one entry per run of identical sets; cardio needs time on the clock
 function entries(){
   const out=[];
@@ -641,7 +694,7 @@ function entries(){
 function finishView(){
   const E=entries(),tv=E.reduce((a,e)=>a+vol(e),0),sets=E.reduce((a,e)=>a+e.sets,0);
   dlg.innerHTML=`<form id="ff"><h3>${R.day} DAY DONE // ${fm((Date.now()-R.start)/60000)}</h3>
-  <div class="tw"><table class="sm" style="min-width:0"><tbody>${E.map(e=>`<tr><td>${esc(e.ex)}</td><td class="r">${e.type==='C'?`${n1(e.dist)} ${S.du} · ${fm(e.mins)}`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:''}`}</td></tr>`).join('')||'<tr><td class="dim">Nothing logged yet_</td></tr>'}</tbody></table></div>
+  <div class="tw"><table class="sm" style="min-width:0"><tbody>${E.map(e=>`<tr><td>${esc(e.ex)}</td><td class="r">${e.type==='C'?`${n1(e.dist)} ${S.du} · ${fm(e.mins)}`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:e.type==='S'?'s':''}`}</td></tr>`).join('')||'<tr><td class="dim">Nothing logged yet_</td></tr>'}</tbody></table></div>
   <p class="dim" style="margin:10px 0">${sets} sets${tv?` · ${n0(tv)} ${S.wu} volume`:''}</p>
   <div class="fgrid"><label>Session RPE (1–10)<input name="rpe" type="number" min="1" max="10" step="0.5"></label></div>
   <label>Note<textarea name="note" rows="3" placeholder="Sleep. Energy. What moved well."></textarea></label>
@@ -650,7 +703,7 @@ function finishView(){
   $('#ff').addEventListener('submit',ev=>{
     ev.preventDefault();const el=ev.target.elements,rpe=el.rpe.value===''?null:+el.rpe.value,note=el.note.value.trim();
     E.forEach((e,i)=>S.log.push({id:uid(),...e,rpe,note:i?'':note}));
-    setPref({day:R.day});const at=R.start;clearRun();save();dlg.close();setMonth(at);render();toast(`Logged ${E.length} entr${E.length===1?'y':'ies'}`);
+    if(PPL.includes(R.day))setPref({day:R.day});const at=R.start;clearRun();save();dlg.close();setMonth(at);render();toast(`Logged ${E.length} entr${E.length===1?'y':'ies'}`);
   });
 }
 function noteForm(day){
@@ -688,7 +741,7 @@ function importCSV(txt){
     const at=ts(g('at')),ex=g('ex');
     if(!isFinite(at)||!ex){skip++;return}
     const dist=nn('dist'),load=nn('load'),ty=g('type').charAt(0).toUpperCase(),rp=num(g('rpe'));
-    const type=ty&&'WBC'.includes(ty)?ty:dist>0?'C':load>0?'W':'B',cd=type==='C';
+    const type=ty&&'WBCS'.includes(ty)?ty:dist>0?'C':load>0?'W':'B',cd=type==='C';
     const t={id:uid(),at,ex,type,sets:cd?0:Math.round(nn('sets'))||1,reps:cd?0:Math.round(nn('reps')),load:type==='W'?load:0,
       dist:cd?dist:0,mins:cd?pm(g('mins')):0,rpe:isFinite(rp)?rp:null,note:g('note')};
     if((cd?!(t.dist>0&&t.mins>0):!t.reps)||seen.has(key(t))){skip++;return}
