@@ -34,7 +34,7 @@ button:hover,select:hover{border-color:var(--amber);color:var(--amber)}
 .pri{background:var(--amber);border-color:var(--amber);color:#000;font-weight:600}
 .pri:hover{color:#000;filter:brightness(1.12)}
 .pos{color:var(--green)}.neg{color:var(--red)}.dim{color:var(--dim)}.amb{color:var(--amber)}
-.bgp{background:var(--green)}.bgn{background:var(--red)}.bgd{background:var(--line2)}
+.bgp{background:var(--green)}.bga{background:var(--amber)}.bgn{background:var(--red)}.bgd{background:var(--line2)}
 .r{text-align:right}
 .pr{color:var(--amber);border:1px solid var(--amber);font-size:10px;padding:0 4px;margin-left:6px}
 
@@ -167,7 +167,7 @@ textarea{resize:vertical}
 <div class="bar">
   <select data-f="ex" aria-label="Exercise"></select>
   <select data-f="stat" aria-label="Outcome">
-    <option value="all">All outcomes</option><option value="up">Progress</option><option value="down">Regress</option>
+    <option value="all">All results</option><option value="up">Progressed</option><option value="down">Regressed</option>
   </select>
   <select data-f="range" aria-label="Range"></select>
   <span id="scope" class="dim"></span>
@@ -271,7 +271,7 @@ const perfT=e=>{const p=perf(e);return e.type==='C'?`${p.toFixed(2)} ${S.du}/h`:
 let S=load();
 const U={ex:'all',stat:'all',range:'all',page:0,month:null};
 function load(){
-  const us=/-US$/.test(navigator.language||''),d={log:[],notes:{},wu:us?'lb':'kg',du:us?'mi':'km'};
+  const us=/-US$/.test(navigator.language||''),d={log:[],notes:{},wu:us?'lb':'kg',du:us?'mi':'km',goal:4};
   try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.log))return {...d,...s,notes:s.notes||{}}}catch(e){}
   return d;
 }
@@ -384,8 +384,8 @@ function calendar(){
   }
   tot=r2(tot);
   return `<div class="card">
-  <div class="rowh"><div><p class="h">Training calendar</p><div class="k">Net progress</div><div class="big ${cls(tot)}">${pc(tot,1)}</div></div>
-   <div>Up: <b class="pos">${wd}</b> &nbsp; Down: <b class="neg">${ld}</b></div></div>
+  <div class="rowh"><div><p class="h">Training calendar</p><div class="k">Strength change this month</div><div class="big ${cls(tot)}">${pc(tot,1)}</div></div>
+   <div>Stronger: <b class="pos">${wd}</b> &nbsp; Weaker: <b class="neg">${ld}</b></div></div>
   <div class="cal">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
   <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">TODAY</button></div>
    <span class="dim">${td} training day${td===1?'':'s'} · ${nT} entr${nT===1?'y':'ies'}</span></div></div>`;
@@ -407,56 +407,85 @@ function table(T){
   <div class="calf"><div><button data-a="pp">&lt;</button> Page <b>${U.page+1}</b> of ${pages} <button data-a="pn">&gt;</button></div><span class="dim">${rows.length} record${rows.length===1?'':'s'}</span></div></div>`;
 }
 
+/* ---------- training metrics (what Strong / Hevy / Fitbod track) ---------- */
+// muscle group of an exercise: from the workout library, else from its type
+const GROUP={};for(const d of ['PUSH','PULL','LEGS'])for(const t of ['W','B'])(LIB[d][t]||[]).forEach(x=>GROUP[exk(x)]??=d);
+const grp=e=>e.type==='C'?'CARDIO':e.type==='S'?'MOBILITY':GROUP[exk(e.ex)]||'OTHER';
+const wkStart=ms=>{const d=new Date(ms);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return d.getTime()};
+function train(T){
+  const all=view(false),w0=wkStart(Date.now()),W=864e5*7;
+  const wk=i=>all.filter(e=>e.at>=w0-i*W&&e.at<w0-(i-1)*W);
+  const days=a=>new Set(a.map(e=>e.day)).size,volOf=a=>a.reduce((s,e)=>s+e.vol,0);
+  const weeks=[...Array(8)].map((_,i)=>wk(7-i)),thisWk=weeks[7],lastWk=weeks[6];
+  let streak=0;for(let i=thisWk.length?0:1;i<52;i++){if(!wk(i).length)break;streak++}
+  const G={};T.forEach(e=>{const g=grp(e),x=G[g]??={sets:0,n:0};x.sets+=e.type==='C'?1:e.sets;x.n++});
+  const C=T.filter(e=>e.type==='C'),cm=C.reduce((s,e)=>s+e.mins,0),cd=C.reduce((s,e)=>s+e.dist,0);
+  // main lift: the filtered exercise, else the weighted lift trained most
+  const Wt=T.filter(e=>e.type==='W'),cnt={};Wt.forEach(e=>cnt[exk(e.ex)]=(cnt[exk(e.ex)]||0)+1);
+  const main=U.ex!=='all'?U.ex:Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
+  const ML={};T.filter(e=>exk(e.ex)===main&&e.type!=='C').forEach(e=>ML[e.day]=Math.max(ML[e.day]||0,e.perf));
+  const best={};all.filter(e=>e.type==='W').forEach(e=>{const k=exk(e.ex);if(!best[k]||e.perf>best[k].perf)best[k]=e});
+  const cw=all.filter(e=>e.type==='C'&&e.at>=w0).reduce((s,e)=>s+e.mins,0);
+  return {wkDays:days(thisWk),lastDays:days(lastWk),wkVol:volOf(thisWk),lastVol:volOf(lastWk),weeksVol:weeks.map(volOf),weeksDays:weeks.map(days),
+    streak,G,cm,cd,cn:C.length,cw,pace:cd?cm/cd:null,main,mainName:main?(T.find(e=>exk(e.ex)===main)||{}).ex:null,mainSeries:Object.keys(ML).sort().map(k=>r2(ML[k])),
+    pbs:Object.values(best).sort((a,b)=>b.perf-a.perf).slice(0,6),latestPR:T.filter(e=>e.pr).at(-1)};
+}
+const hbar=(label,val,f,c='bga')=>`<div class="ev"><span>${label}</span><b>${val}</b></div><div class="hb"><i class="${c}" style="width:${(Math.min(1,f||0)*100).toFixed(1)}%"></i></div>`;
+const pace=v=>v==null?'—':`${fm(v)} /${S.du}`;
+
 function render(){
   const names={};S.log.forEach(e=>{names[exk(e.ex)]??=e.ex.trim()});
   if(U.ex!=='all'&&!(U.ex in names))U.ex='all';
-  const T=view(),s=stats(T),n=s.n,nd=s.dk.length,bd=nd-s.dw-s.dl;
-  const pct=(a,b)=>b?Math.round(a/b*100)+'%':'0%';
-  const pfT=s.pf==null?'—':s.pf===Infinity?'&infin;':s.pf.toFixed(2),gs=s.gp+s.gl,mx=Math.max(s.aw,s.al)||1;
+  const T=view(),s=stats(T),t=train(T),n=s.n,nd=s.dk.length;
+  const pct=(a,b)=>b?Math.round(a/b*100)+'%':'—',vd=t.lastVol?(t.wkVol-t.lastVol)/t.lastVol*100:null;
   $('[data-f=ex]').innerHTML='<option value="all">All exercises</option>'+Object.keys(names).sort().map(k=>`<option value="${esc(k)}"${k===U.ex?' selected':''}>${esc(names[k])}</option>`).join('');
   $('[data-f=range]').innerHTML=Object.entries(RANGES).map(([k,v])=>`<option value="${k}"${k===U.range?' selected':''}>${v}</option>`).join('')+(U.range in RANGES?'':`<option value="${U.range}" selected>${dlabel(U.range)}</option>`);
   $('#scope').textContent=`Statistics for ${U.ex==='all'?'All Exercises':names[U.ex]} — ${RANGES[U.range]||dlabel(U.range)}`+(nd?` · ${dlabel(s.dk[0])} → ${dlabel(s.dk[nd-1])}`:'');
+  const GS=['PUSH','PULL','LEGS','CARDIO','MOBILITY','OTHER'].filter(g=>t.G[g]),gm=Math.max(1,...GS.map(g=>t.G[g].sets));
+  const push=t.G.PUSH?.sets||0,pull=t.G.PULL?.sets||0,lift=push+pull+(t.G.LEGS?.sets||0);
 
   $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
 <section class="g g4">
- <div class="card"><p class="h">Progress</p><div class="k">Comparisons</div><div class="big">${n}</div>
+ <div class="card"><p class="h">Workouts</p><div class="k">This week</div><div class="big ${t.wkDays>=S.goal?'pos':''}">${t.wkDays} / ${S.goal}</div>
+  ${gauge([[Math.min(1,t.wkDays/S.goal),'sg']],pct(t.wkDays,S.goal))}
+  ${lg('bgp','This week',t.wkDays)}${lg('bgd','Last week',t.lastDays)}${lg('bga','Week streak',t.streak+' wk')}</div>
+ <div class="card"><p class="h">Volume</p><div class="k">Weight × reps, this week</div><div class="big">${n0(t.wkVol)} ${S.wu}</div>
+  ${gauge([[t.lastVol?Math.min(1,t.wkVol/t.lastVol):0,'sg']],vd==null?'—':pc(vd,1))}
+  ${lg('bgp','This week',n0(t.wkVol))}${lg('bgd','Last week',n0(t.lastVol))}${lg('bga','Sets in range',s.sets)}</div>
+ <div class="card"><p class="h">Personal records</p><div class="k">In range</div><div class="big ${s.prs?'pos':''}">${s.prs}</div>
   ${gauge([[n?s.w/n:0,'sg'],[n?s.be/n:0,'sd'],[n?s.l/n:0,'sr']],n?Math.round(s.wr)+'%':'—')}
-  ${lg('bgp','Progress',s.w,pct(s.w,n))}${lg('bgd','Held',s.be,pct(s.be,n))}${lg('bgn','Regress',s.l,pct(s.l,n))}</div>
- <div class="card"><p class="h">Session wins</p><div class="k">Training days</div><div class="big">${nd}</div>
-  ${gauge([[nd?s.dw/nd:0,'sg'],[nd?bd/nd:0,'sd'],[nd?s.dl/nd:0,'sr']],nd?pct(s.dw,nd):'—')}
-  ${lg('bgp','Up days',s.dw,pct(s.dw,nd))}${lg('bgd','Flat days',bd,pct(bd,nd))}${lg('bgn','Down days',s.dl,pct(s.dl,nd))}</div>
- <div class="card"><p class="h">Progress factor</p><div class="k">Factor</div><div class="big">${pfT}</div>
-  ${gauge([[gs?s.gp/gs:0,'sg'],[gs?s.gl/gs:0,'sr']],pfT)}
-  ${lg('bgp','Gains',pc(s.gp,1))}${lg('bgn','Drops',pc(-s.gl))}${lg('bgd','Net',`<span class="${cls(s.tot)}">${pc(s.tot,1)}</span>`)}</div>
- <div class="card"><p class="h">Avg gain/drop</p><div class="k">Average</div><div class="big ${cls(s.aw-s.al)}">${pc(s.aw-s.al,1)}</div>
-  <div class="ev"><span>Gain</span><b class="pos">${pc(s.aw,1)}</b></div><div class="hb"><i class="bgp" style="width:${(s.aw/mx*100).toFixed(1)}%"></i></div>
-  <div class="ev"><span>Drop</span><b class="neg">${pc(-s.al)}</b></div><div class="hb"><i class="bgn" style="width:${(s.al/mx*100).toFixed(1)}%"></i></div>
-  <div class="ev rule"><span class="dim">Expectancy / entry</span><b class="${cls(s.exp)}">${pc(s.exp,1)}</b></div></div>
+  ${lg('bgp','Progressing',s.w,pct(s.w,n))}${lg('bgd','Holding',s.be,pct(s.be,n))}${lg('bgn','Regressing',s.l,pct(s.l,n))}</div>
+ <div class="card"><p class="h">Cardio</p><div class="k">Distance in range</div><div class="big">${n1(t.cd)} ${S.du}</div>
+  ${gauge([[Math.min(1,t.cw/150),'sg']],pct(t.cw,150))}
+  ${lg('bgp','This week',Math.round(t.cw)+' / 150 min')}${lg('bgd','Average pace',pace(t.pace))}${lg('bga','Sessions',t.cn)}</div>
 </section>
 <section class="g g21">
  ${calendar()}
- <div class="card"><p class="h">Evaluation</p>
-  <div class="sec first">Performance</div>
-  ${ev('Expectancy',pc(s.exp,1),s.exp)}${ev('Average per training day',pc(s.avgDay,1),s.avgDay)}${ev('Biggest gain',pc(Math.max(s.best,0),1),Math.max(s.best,0))}${ev('Biggest drop',pc(Math.min(s.worst,0)),Math.min(s.worst,0))}${ev('PRs set',s.prs,s.prs)}
-  <div class="sec">Load</div>
-  ${ev('Load volume',n0(s.tv)+' '+S.wu)}${ev('Total sets',s.sets)}${ev('Distance',n1(s.dist)+' '+S.du)}${ev('Average RPE',s.rpe==null?'—':s.rpe.toFixed(1))}
-  <div class="sec">Consistency</div>
-  ${ev('Up days / down days',`${s.dw} / ${s.dl}`,s.dw-s.dl)}${ev('Sessions / week',s.perWk==null?'—':s.perWk.toFixed(1))}${ev('Longest streak (W / L)',`${s.lw}W / ${s.ll}L`)}${ev('Current streak',s.run>0?s.run+'W':s.run<0?-s.run+'L':'—',s.run)}${ev('Last 5 scored',s.last.map(e=>`<i class="dot ${e.d>0?'bgp':e.d<0?'bgn':'bgd'}"></i>`).join(' ')||'—')}
+ <div class="card"><p class="h">Training split</p><div class="k">Sets by muscle group · cardio and mobility by session</div>
+  ${GS.length?GS.map(g=>hbar(g[0]+g.slice(1).toLowerCase(),t.G[g].sets,t.G[g].sets/gm,g==='CARDIO'||g==='MOBILITY'?'bgd':'bga')).join(''):ND}
+  <div class="sec">Balance</div>
+  ${ev('Push : pull',pull?`${n1(push/pull)} : 1`:'—',pull&&Math.abs(push/pull-1)<=.25?1:push||pull?-1:0)}
+  ${ev('Legs share of lifting sets',lift?pct(t.G.LEGS?.sets||0,lift):'—')}
+  ${ev('Average RPE',s.rpe==null?'—':s.rpe.toFixed(1))}
+  ${ev('Workouts per week',s.perWk==null?'—':s.perWk.toFixed(1))}
+  ${ev('Latest PR',t.latestPR?`${esc(t.latestPR.ex)} · ${perfT(t.latestPR)}`:'—',t.latestPR?1:0)}
  </div>
 </section>
 <section class="g g21">
- <div class="card"><div class="rowh"><div><p class="h">Progress curve</p><div class="big ${cls(s.tot)}">${pc(s.tot,1)}</div></div>
-  <div class="eqs">${kv('Progress rate',n?s.wr.toFixed(1)+'%':'—')}${kv('Factor',pfT)}${kv('Scored',n)}${kv('Best',`<span class="${cls(s.best)}">${pc(s.best,1)}</span>`)}${kv('Worst',`<span class="${cls(s.worst)}">${pc(s.worst,1)}</span>`)}</div></div>
-  ${line(s.curve,s.tot<0?'cr':'cg')}</div>
- <div class="card"><p class="h">Performance</p><div class="k">Daily &Delta;</div><div class="big ${cls(s.tot)}">${pc(s.tot,1)}</div>${bars(s.dp,1)}</div>
+ <div class="card"><div class="rowh"><div><p class="h">Strength trend</p><div class="k">${t.mainName?esc(t.mainName)+' · estimated 1RM / best set':'Your main lift'}</div><div class="big">${t.mainSeries.length?n1(t.mainSeries.at(-1)):'—'}</div></div>
+  <div class="eqs">${kv('First',t.mainSeries.length?n1(t.mainSeries[0]):'—')}${kv('Best',t.mainSeries.length?n1(Math.max(...t.mainSeries)):'—')}${kv('Change',t.mainSeries.length>1?`<span class="${cls(t.mainSeries.at(-1)-t.mainSeries[0])}">${pc((t.mainSeries.at(-1)-t.mainSeries[0])/t.mainSeries[0]*100,1)}</span>`:'—')}</div></div>
+  ${(()=>{const lo=Math.min(...t.mainSeries,Infinity)*.97;return line(t.mainSeries.map(v=>r2(v-lo)),'cg')})()}</div>
+ <div class="card"><p class="h">Weekly volume</p><div class="k">Last 8 weeks · ${S.wu}</div><div class="big">${n0(t.wkVol)}</div>${bars(t.weeksVol)}</div>
 </section>
 <section class="g g3">
- <div class="card"><p class="h">Score</p><div class="k">Composite 0–100</div><div class="big amb">${n?s.score:'—'}</div>${radar(s.axes)}</div>
- <div class="card"><p class="h">Volume</p><div class="k">Load volume / day</div><div class="big">${n0(s.tv)} ${S.wu}</div>${bars(s.vol)}</div>
- <div class="card"><p class="h">Drawdown</p><div class="k">Max drawdown</div><div class="big ${cls(-s.mdd)}">${pc(-s.mdd)}</div>${line(s.under,'cr')}</div>
+ <div class="card"><p class="h">Personal bests</p><div class="k">Best estimated 1RM per lift</div>
+  ${t.pbs.length?t.pbs.map(e=>`<div class="ev"><span>${esc(e.ex)}</span><b>${n1(e.perf)} ${S.wu} <span class="dim">· ${dlabel(e.day)}</span></b></div>`).join(''):ND}</div>
+ <div class="card"><p class="h">Daily volume</p><div class="k">Weight × reps per training day</div><div class="big">${n0(s.tv)} ${S.wu}</div>${bars(s.vol)}</div>
+ <div class="card"><p class="h">Workouts per week</p><div class="k">Last 8 weeks · goal ${S.goal}</div><div class="big ${t.wkDays>=S.goal?'pos':''}">${t.wkDays}</div>${bars(t.weeksDays)}</div>
 </section>
 ${table(T)}
-<footer><p>Perf = estimated 1RM (weighted) · reps per set (bodyweight) · speed (cardio). &Delta; = change in Perf vs the previous day you trained that exercise; the first day is the baseline.</p>
+<footer><p>Perf = estimated 1RM (weighted) · reps per set (bodyweight) · speed (cardio) · hold (stretch). &Delta; = change in Perf vs the previous day you trained that exercise; the first day is the baseline. Cardio target = 150 min a week (WHO guideline).</p>
+ Weekly goal <select data-f="goal" aria-label="Workouts per week">${[2,3,4,5,6].map(v=>`<option value="${v}"${v===S.goal?' selected':''}>${v} workouts</option>`).join('')}</select>
  Units <select data-f="wu" aria-label="Load unit">${['lb','kg'].map(u=>`<option${u===S.wu?' selected':''}>${u}</option>`).join('')}</select><select data-f="du" aria-label="Distance unit">${['mi','km'].map(u=>`<option${u===S.du?' selected':''}>${u}</option>`).join('')}</select> · saved on this device · SYNC shares it across your devices
  <button data-a="bak">BACKUP JSON</button><button data-a="clear">CLEAR ALL</button></footer>`;
 }
@@ -794,7 +823,7 @@ function shift(k){const d=new Date(U.month.y,U.month.m+k,1);U.month={y:d.getFull
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&ACT[b.dataset.a])ACT[b.dataset.a](b.dataset.v)});
 document.addEventListener('change',e=>{
   const k=e.target.dataset.f;if(!k)return;
-  if(k==='wu'||k==='du'){S[k]=e.target.value;save()}else U[k]=e.target.value;
+  if(k==='wu'||k==='du'){S[k]=e.target.value;save()}else if(k==='goal'){S.goal=+e.target.value;save()}else U[k]=e.target.value;
   U.page=0;render();
 });
 $('#file').addEventListener('change',async e=>{
