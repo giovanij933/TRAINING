@@ -158,7 +158,7 @@ textarea{resize:vertical}
   <div class="brand">ISIONXXX <b>//</b> TRAINING<i class="cur"></i></div>
   <div class="acts">
     <button class="pri" data-a="go">&#9654; START</button>
-    <button data-a="add">+ ENTRY</button>
+    <button data-a="add">+ LOG</button>
     <button data-a="imp">IMPORT</button>
     <button data-a="note">NOTES</button>
     <input id="file" type="file" accept=".csv,.json,text/csv,application/json" hidden>
@@ -417,7 +417,7 @@ function render(){
   $('[data-f=range]').innerHTML=Object.entries(RANGES).map(([k,v])=>`<option value="${k}"${k===U.range?' selected':''}>${v}</option>`).join('')+(U.range in RANGES?'':`<option value="${U.range}" selected>${dlabel(U.range)}</option>`);
   $('#scope').textContent=`Statistics for ${U.ex==='all'?'All Exercises':names[U.ex]} — ${RANGES[U.range]||dlabel(U.range)}`+(nd?` · ${dlabel(s.dk[0])} → ${dlabel(s.dk[nd-1])}`:'');
 
-  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ ENTRY</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
+  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
 <section class="g g4">
  <div class="card"><p class="h">Progress</p><div class="k">Comparisons</div><div class="big">${n}</div>
   ${gauge([[n?s.w/n:0,'sg'],[n?s.be/n:0,'sd'],[n?s.l/n:0,'sr']],n?Math.round(s.wr)+'%':'—')}
@@ -457,7 +457,7 @@ function render(){
 </section>
 ${table(T)}
 <footer><p>Perf = estimated 1RM (weighted) · reps per set (bodyweight) · speed (cardio). &Delta; = change in Perf vs the previous day you trained that exercise; the first day is the baseline.</p>
- Units <select data-f="wu" aria-label="Load unit">${['lb','kg'].map(u=>`<option${u===S.wu?' selected':''}>${u}</option>`).join('')}</select><select data-f="du" aria-label="Distance unit">${['mi','km'].map(u=>`<option${u===S.du?' selected':''}>${u}</option>`).join('')}</select> · data lives on this device only
+ Units <select data-f="wu" aria-label="Load unit">${['lb','kg'].map(u=>`<option${u===S.wu?' selected':''}>${u}</option>`).join('')}</select><select data-f="du" aria-label="Distance unit">${['mi','km'].map(u=>`<option${u===S.du?' selected':''}>${u}</option>`).join('')}</select> · saved on this device · SYNC shares it across your devices
  <button data-a="bak">BACKUP JSON</button><button data-a="clear">CLEAR ALL</button></footer>`;
 }
 
