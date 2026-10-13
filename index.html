@@ -133,10 +133,17 @@ textarea{resize:vertical}
 .clock{font-size:22px;font-weight:600;text-align:center;margin-bottom:4px;letter-spacing:.04em}
 .held .ball{opacity:.45}.held .cue,.clock.held{color:var(--dim)}
 .c{text-align:center}
-.xl{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px}
-.xl button{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;white-space:nowrap}
-.xl em{font-style:normal;font-size:10px;color:var(--dim)}
-.xl .on{border-color:var(--amber);color:var(--amber)}
+/* the workout's exercises, top to bottom: done ones ticked, the current one lit, tap any to switch */
+.xl{display:flex;flex-direction:column;margin-bottom:16px;border-top:1px solid var(--line)}
+.xl button{display:flex;align-items:center;gap:12px;width:100%;padding:12px 4px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;font-size:13px;letter-spacing:0;color:var(--tx);transition:background-color .18s,color .18s}
+.xl button::before{content:'';flex:none;width:8px;height:8px;border-radius:50%;border:1px solid var(--line2);transition:background-color .18s,border-color .18s}
+.xl button.dn::before{background:var(--green);border-color:var(--green)}
+.xl button.on{color:var(--amber);background:rgba(255,176,0,.06)}
+.xl button.on::before{background:var(--amber);border-color:var(--amber);box-shadow:0 0 10px rgba(255,176,0,.6)}
+.xl button:hover{color:var(--amber)}
+.xl em{margin-left:auto;font-style:normal;font-size:11px;color:var(--dim)}
+.xl button.on em{color:var(--amber)}
+.xl #xa{color:var(--dim)}.xl #xa::before{border-style:dashed}
 .sets{margin:10px 0 12px;padding-left:22px}.sets li{padding:3px 0}.sets button{padding:0 6px;font-size:10px;margin-left:8px}
 .lnk{border:0;padding:0;background:none;color:var(--amber);text-decoration:underline;font-size:inherit;letter-spacing:0}
 .bigclk{font-size:48px;font-weight:600;text-align:center;margin:14px 0}
@@ -670,9 +677,9 @@ function draw(){
 }
 function workView(){
   const x=R.list[R.cur],C=x.type==='C',H=x.type==='S',ns=nextSet(x);
-  const tab=(y,i)=>`<button type="button" data-x="${i}"${i===R.cur?' class="on"':''}>${esc(y.ex)}<em>${y.type==='C'?(cms(y)?fm(cms(y)/60000):'—'):`${y.sets.length} ${y.type==='S'?'hold':'set'}${y.sets.length===1?'':'s'}`}</em></button>`;
+  const tab=(y,i)=>`<button type="button" data-x="${i}" class="${i===R.cur?'on':''}${y.sets.length||cms(y)?' dn':''}">${esc(y.ex)}<em>${y.type==='C'?(cms(y)?fm(cms(y)/60000):'—'):`${y.sets.length} ${y.type==='S'?'hold':'set'}${y.sets.length===1?'':'s'}`}</em></button>`;
   dlg.innerHTML=`<div><h3>${R.day} DAY <span class="dim" id="wt"></span></h3>
-  <div class="xl">${R.list.map(tab).join('')}<button type="button" id="xa">+ ADD<em>exercise</em></button></div>
+  <div class="xl">${R.list.map(tab).join('')}<button type="button" id="xa">Add exercise<em>+</em></button></div>
   <div id="xr" class="chips" hidden><input id="xn" list="exs" placeholder="Exercise" autocomplete="off" style="flex:1;width:auto"><button type="button" id="xk">ADD</button>
    <datalist id="exs">${[...new Set([...S.log.map(e=>e.ex.trim()),...PRESET])].map(a=>`<option value="${esc(a)}">`).join('')}</datalist></div>
   <p class="h">${esc(x.ex)}</p><p class="dim">${lastTxt(x.ex)}</p>
