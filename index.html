@@ -194,6 +194,22 @@ dialog.ss .gp{font-size:15px;line-height:1.6;max-width:32ch;margin:0 auto 12px;c
 dialog.ss p.c{font-size:12px;margin:0 0 8px}
 @media(min-width:700px){dialog.ss{inset:0;margin:auto;width:min(620px,calc(100% - 48px));height:min(900px,calc(100% - 48px));border:1px solid var(--line2)}}
 @media(prefers-reduced-motion:reduce){dialog.ss,dialog.ss>*{animation:none!important}}
+/* choices in a session read as a list, like the live workout's exercises: a dot (a box when you can pick several),
+   the name, a detail on the right. Short sets of options are one segmented bar. */
+dialog.ss .vl{display:flex;flex-direction:column;gap:0;margin:6px 0 20px;border-top:1px solid var(--line)}
+dialog.ss .vl button{display:flex;align-items:center;gap:12px;width:100%;padding:12px 4px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;font-size:13px;letter-spacing:0;color:var(--tx);transition:background-color .18s,color .18s}
+dialog.ss .vl button::before{content:'';flex:none;width:8px;height:8px;border-radius:50%;border:1px solid var(--line2);transition:background-color .18s,border-color .18s,box-shadow .18s}
+dialog.ss .vl button.on{color:var(--amber);background:rgba(255,176,0,.06)}
+dialog.ss .vl button.on::before{background:var(--amber);border-color:var(--amber);box-shadow:0 0 10px rgba(255,176,0,.6)}
+dialog.ss .vl.multi button::before{width:14px;height:14px;border-radius:2px;display:grid;place-items:center;font-size:10px;font-weight:600;line-height:1;color:#000}
+dialog.ss .vl.multi button.on::before{content:'✓';box-shadow:none}
+dialog.ss .vl button:hover{color:var(--amber)}
+dialog.ss .vl em{margin-left:auto;font-style:normal;font-size:11px;color:var(--dim);text-align:right}
+dialog.ss .vl button.on em{color:var(--amber)}
+dialog.ss .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:0;margin:6px 0 20px;border:1px solid var(--line2)}
+dialog.ss .seg button{border:0;border-right:1px solid var(--line2);padding:11px 2px;text-align:center;background:none;font-size:12px;transition:background-color .18s,color .18s}
+dialog.ss .seg button:last-child{border-right:0}
+dialog.ss .seg button.on{background:var(--amber);color:#000}
 </style>
 </head>
 <body>
@@ -640,7 +656,7 @@ function startForm(){
   const P=pref(),last=P.day,day=PPL.includes(last)?PPL[(PPL.indexOf(last)+1)%3]:'PUSH';
   let D=day,sel=[...PICK[D]];
   dlg.innerHTML=`<form id="sf"><h3>START WORKOUT</h3>
-  <div class="chips" id="dy">${DAYS.map(d=>`<button type="button" data-d="${d}">${d}</button>`).join('')}</div>
+  <div class="seg" id="dy">${DAYS.map(d=>`<button type="button" data-d="${d}">${d}</button>`).join('')}</div>
   <div id="xs"></div>
   <div class="fgrid">
    <label>Rest between sets<select name="rest">${RESTS.map(r=>`<option value="${r}"${r===(P.rest||90)?' selected':''}>${fm(r/60)}</option>`).join('')}</select></label>
@@ -651,7 +667,10 @@ function startForm(){
   const paint=()=>{
     f.querySelectorAll('[data-d]').forEach(b=>b.classList.toggle('on',b.dataset.d===D));
     const G=D==='STRETCH'?Object.entries(STRETCHES):Object.entries(LIB[D]).map(([t,L])=>[t==='S'?'Stretch · cooldown':TYPES[t],L]);
-    $('#xs').innerHTML=G.map(([t,L])=>`<p class="k">${t}</p><div class="chips">${L.map(x=>`<button type="button" data-e="${esc(x)}"${sel.includes(x)?' class="on"':''}>${esc(x)}</button>`).join('')}</div>`).join('');
+    // each exercise shows what you did last time, so the list doubles as a reminder
+    const last={};S.log.forEach(e=>{const k=exk(e.ex);if(!last[k]||e.at>last[k].at)last[k]=e});
+    const lt=x=>{const e=last[exk(x)];return !e?'':e.type==='C'?`${n1(e.dist)} ${S.du} · ${fm(e.mins)}`:e.type==='S'?`${e.sets}×${e.reps}s`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)}`:''}`};
+    $('#xs').innerHTML=G.map(([t,L])=>`<p class="k">${t}</p><div class="vl multi">${L.map(x=>`<button type="button" data-e="${esc(x)}"${sel.includes(x)?' class="on"':''}>${esc(x)}<em>${lt(x)}</em></button>`).join('')}</div>`).join('');
     $('#cnt').textContent=`${sel.length} exercise${sel.length===1?'':'s'}`;
   };
   f.addEventListener('click',ev=>{
