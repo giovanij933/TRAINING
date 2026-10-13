@@ -151,6 +151,42 @@ textarea{resize:vertical}
   .cd{min-height:50px;padding:3px}.cd em{display:none}.cd b{font-size:10px}
   .eqs{gap:14px}
 }
+/* ---------- session sheet: the start, live and done screens of a session ----------
+   Full screen on a phone (a centred sheet on wide screens) with no hard frame and a soft amber glow behind the
+   bubble. It slides up when it opens and each step fades in, so start -> live -> done flows instead of jumping. */
+dialog.ss{position:fixed;inset:0;width:100%;max-width:none;height:100%;max-height:none!important;margin:0;border:0;
+  padding:calc(env(safe-area-inset-top) + 18px) 20px 0;overflow-y:auto;overscroll-behavior:contain;
+  background:radial-gradient(90% 42% at 50% 30%,rgba(255,176,0,.07),transparent 72%),var(--bg);
+  animation:ssIn .4s cubic-bezier(.2,.8,.2,1)!important}
+dialog.ss::backdrop{background:rgba(0,0,0,.6);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+@keyframes ssIn{from{opacity:0;transform:translateY(32px)}}
+@keyframes ssFade{from{opacity:0;transform:translateY(6px)}}
+dialog.ss>*{display:flex;flex-direction:column;min-height:100%;max-width:520px;margin:0 auto;animation:ssFade .3s ease both}
+dialog.ss h3{align-self:center;text-align:center;font-size:11px;font-weight:600;letter-spacing:.22em;color:var(--dim);margin:4px 0 24px}
+/* start screen: room to breathe, one family of chips, the action pinned to the bottom */
+dialog.ss .chips{gap:8px;margin:6px 0 20px}
+dialog.ss .chips button{padding:9px 12px}
+dialog.ss .chips button,dialog.ss .rate button{transition:background-color .18s,border-color .18s,color .18s}
+dialog.ss .rate{gap:6px;margin:6px 0 20px}
+dialog.ss .rate button{padding:10px 0}
+dialog.ss label{margin-bottom:6px}
+dialog.ss .fa2{position:sticky;bottom:0;z-index:2;margin:auto -20px 0;padding:22px 20px calc(env(safe-area-inset-bottom) + 18px);
+  background:linear-gradient(rgba(7,7,7,0),var(--bg) 40%);display:flex;gap:10px}
+dialog.ss .fa2>button{flex:1;padding:14px 8px;font-size:12px;letter-spacing:.1em}
+dialog.ss .fa2{flex-wrap:wrap}dialog.ss .fa2>span{flex:1 0 100%;text-align:center;font-size:11px;color:var(--dim)}dialog.ss .fa2>span:empty{display:none}
+dialog.ss .fa2>.ghost{flex:0 0 auto;border-color:transparent;background:none;color:var(--dim)}
+/* live: the bubble is the screen, centred, with a large quiet clock */
+dialog.ss>*:has(>.bub)>.bub{margin-top:auto}
+dialog.ss .bub{width:min(76vw,330px);margin:8px auto 22px}
+dialog.ss .bub .rt{stroke:rgba(255,255,255,.07)}
+dialog.ss .ball{box-shadow:0 0 90px rgba(255,176,0,.16),inset 0 0 40px rgba(255,176,0,.06);transition:opacity .5s}
+dialog.ss .cue{letter-spacing:.28em;font-size:12px}
+dialog.ss .cue em{font-size:36px;font-weight:300}
+dialog.ss .clock{font-size:48px;font-weight:300;letter-spacing:.02em;margin:0 0 6px;font-variant-numeric:tabular-nums;transition:color .3s}
+dialog.ss .gp{font-size:15px;line-height:1.6;max-width:32ch;margin:0 auto 12px;color:#cfcabd;transition:opacity .3s}
+dialog.ss p.c{font-size:12px;margin:0 0 8px}
+@media(min-width:700px){dialog.ss{inset:0;margin:auto;width:min(620px,calc(100% - 48px));height:min(900px,calc(100% - 48px));border:1px solid var(--line2)}}
+@media(prefers-reduced-motion:reduce){dialog.ss,dialog.ss>*{animation:none!important}}
 </style>
 </head>
 <body>
@@ -243,6 +279,10 @@ const ALIAS={
 };
 
 const $=s=>document.querySelector(s), dlg=$('#dlg');
+// session screens (start, live, done) open as a full-screen sheet; other dialogs keep the usual box
+const sheet=()=>dlg.classList.add('ss');
+dlg.addEventListener('close',()=>dlg.classList.remove('ss'));
+
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
 const r2=v=>Math.round(v*100)/100;
@@ -599,7 +639,7 @@ function startForm(){
    <label>Rest between sets<select name="rest">${RESTS.map(r=>`<option value="${r}"${r===(P.rest||90)?' selected':''}>${fm(r/60)}</option>`).join('')}</select></label>
    <label>Breathing during rest<select name="pat">${Object.keys(PACE).map(k=>`<option${k===(P.pat||'Calm 4-6')?' selected':''}>${k}</option>`).join('')}</select></label>
   </div>
-  <div class="fa2"><span class="dim" id="cnt"></span><button type="button" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
+  <div class="fa2"><span class="dim" id="cnt"></span><button type="button" class="ghost" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
   const f=$('#sf');
   const paint=()=>{
     f.querySelectorAll('[data-d]').forEach(b=>b.classList.toggle('on',b.dataset.d===D));
@@ -619,13 +659,13 @@ function startForm(){
     R={day:D,list:sel.map(item),cur:0,start:Date.now(),rest:null,restSec:rest,pat,fin:false};
     chime();keepRun();draw();
   });
-  dlg.showModal();
+  sheet();dlg.showModal();
 }
 
 function draw(){
   clearInterval(RI);cancelAnimationFrame(RA);
   if(R.fin)finishView();else if(R.hold)holdView();else if(R.rest)restView();else workView();
-  if(!dlg.open)dlg.showModal();
+  sheet();if(!dlg.open)dlg.showModal();
   wake(true);
 }
 function workView(){
@@ -647,7 +687,7 @@ function workView(){
   <div class="fgrid"><label>Reps<input id="ir" type="number" inputmode="numeric" min="1" step="1" value="${ns.reps||''}"></label>
    ${x.type==='W'?`<label>Load (${S.wu})<input id="il" type="number" inputmode="decimal" min="0" step="any" value="${ns.load??''}"></label>`:''}</div>
   <button type="button" class="pri" id="ls" style="width:100%">LOG SET ${x.sets.length+1} · REST ${fm(R.restSec/60)}</button>`}
-  <div class="fa2"><button type="button" id="rd">DISCARD</button>${R.cur<R.list.length-1?'<button type="button" id="nx">NEXT &gt;</button>':''}<button type="button" class="pri" id="fn">FINISH</button></div></div>`;
+  <div class="fa2"><button type="button" class="ghost" id="rd">DISCARD</button>${R.cur<R.list.length-1?'<button type="button" id="nx">NEXT &gt;</button>':''}<button type="button" class="pri" id="fn">FINISH</button></div></div>`;
   const tick=()=>{$('#wt').textContent='· '+fm((Date.now()-R.start)/60000);if(C)$('#cc').textContent=fm(cms(x)/60000)};
   tick();RI=setInterval(tick,250);
   dlg.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{R.cur=+b.dataset.x;keepRun();draw()});
@@ -699,7 +739,7 @@ function holdView(){
   <div class="bub" id="bub"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="rt" cx="120" cy="120" r="118"/><circle class="rp" id="pg" cx="120" cy="120" r="118" pathLength="100" stroke-dasharray="0 100"/></svg>
    <div class="ball" id="ball"></div><div class="cue" id="pc" aria-live="polite"></div></div>
   <div class="clock" id="clk"></div><p class="dim c">Breathe into the stretch · ${R.pat}</p>
-  <div class="fa2"><button type="button" id="hx">CANCEL</button><button type="button" id="h15">+15s</button><button type="button" class="pri" id="hd">DONE</button></div></div>`;
+  <div class="fa2"><button type="button" class="ghost" id="hx">CANCEL</button><button type="button" id="h15">+15s</button><button type="button" class="pri" id="hd">DONE</button></div></div>`;
   const el=()=>Date.now()-R.hold.t0;
   const log=secs=>{x.sets.push({reps:secs,load:0,at:R.hold.t0});R.hold=null;keepRun();draw()};
   const tick=()=>{
@@ -732,7 +772,7 @@ function finishView(){
   <p class="dim" style="margin:10px 0">${sets} sets${tv?` · ${n0(tv)} ${S.wu} volume`:''}</p>
   <div class="fgrid"><label>Session RPE (1–10)<input name="rpe" type="number" min="1" max="10" step="0.5"></label></div>
   <label>Note<textarea name="note" rows="3" placeholder="Sleep. Energy. What moved well."></textarea></label>
-  <div class="fa2"><button type="button" id="bk">&lt; BACK</button><button class="pri"${E.length?'':' disabled'}>SAVE</button></div></form>`;
+  <div class="fa2"><button type="button" class="ghost" id="bk">&lt; BACK</button><button class="pri"${E.length?'':' disabled'}>SAVE</button></div></form>`;
   $('#bk').onclick=()=>{R.fin=false;keepRun();draw()};
   $('#ff').addEventListener('submit',ev=>{
     ev.preventDefault();const el=ev.target.elements,rpe=el.rpe.value===''?null:+el.rpe.value,note=el.note.value.trim();
