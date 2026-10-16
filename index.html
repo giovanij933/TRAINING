@@ -406,6 +406,29 @@ function gauge(segs,label){
   const arcs=segs.map(([v,c])=>{const a=`<path class="${c}" d="${ARC}" pathLength="100" stroke-dasharray="${(v*100).toFixed(2)} 100" stroke-dashoffset="${(-off*100).toFixed(2)}"/>`;off+=v;return a}).join('');
   return `<svg class="gauge" viewBox="0 0 124 70"><path class="s0" d="${ARC}"/>${arcs}<text x="62" y="60" text-anchor="middle">${label}</text></svg>`;
 }
+/* bodyweight and recovery, from ISIONXXX's morning check-in (logged on TODAY; read-only here) */
+const CQ=['','Poor','Restless','OK','Good','Great'],CE=['','Drained','Low','Steady','Good','Charged'];
+function checkins(){let L=[];try{L=JSON.parse(localStorage.getItem('isx.checkin.v1'))?.log}catch(e){}return Array.isArray(L)?L.slice().sort((a,b)=>a.day<b.day?-1:1):[]}
+const toWU=(w,u)=>!(w>0)?null:!u||u===S.wu?w:S.wu==='kg'?w/2.20462:w*2.20462;
+function bodyHTML(t){
+  const C=checkins();if(!C.length)return '';
+  const W=C.filter(e=>e.w>0).map(e=>({d:e.day,w:toWU(e.w,e.u)})),W30=W.slice(-30),last=W.at(-1);
+  const av=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null,w7=av(W.slice(-7).map(x=>x.w)),old=W.length>7?av(W.slice(-37,-30).map(x=>x.w))??W[0].w:null;
+  const today=C.find(e=>e.day===ymd(new Date())),sl7=av(C.slice(-7).map(e=>e.sleep)),main=t.mainSeries.at(-1);
+  // a plain readiness call from sleep and energy, like the readiness scores in recovery apps
+  const rd=!today?['Check in on TODAY',0]:today.energy<=2||today.sleep<6?['Go lighter today',-1]:today.energy>=4&&today.sleep>=7?['Good day to push',1]:['Train as planned',0];
+  return `<section class="g g21">
+ <div class="card"><div class="rowh"><div><p class="h">Bodyweight</p><div class="k">From your morning check-in${W30.length>1?` · last ${W30.length}`:''}</div><div class="big">${last?`${n1(last.w)} ${S.wu}`:'—'}</div></div>
+  <div class="eqs">${kv('7-day avg',w7?n1(w7):'—')}${kv('Change',old&&w7?`<span>${w7-old>0?'+':''}${n1(w7-old)}</span>`:'—')}${kv(t.mainName?esc(t.mainName)+' ÷ BW':'Lift ÷ BW',main&&last?(main/last.w).toFixed(2)+'×':'—')}</div></div>
+  ${W30.length>1?(()=>{const lo=Math.min(...W30.map(x=>x.w))*.99;return line(W30.map(x=>r2(x.w-lo)),'cg')})():'<div class="nd">ADD YOUR WEIGHT AT CHECK-IN_</div>'}</div>
+ <div class="card"><p class="h">Recovery</p><div class="k">Today's check-in</div><div class="big ${rd[1]>0?'pos':rd[1]<0?'neg':''}">${today?`${today.sleep} h sleep`:'—'}</div>
+  ${ev('Readiness',rd[0],rd[1])}
+  ${ev('Sleep quality',today?CQ[today.q]:'—',today?(today.q>=4?1:today.q<=2?-1:0):0)}
+  ${ev('Energy',today?CE[today.energy]:'—',today?(today.energy>=4?1:today.energy<=2?-1:0):0)}
+  ${ev('Sleep, 7-day average',sl7!=null?n1(sl7)+' h':'—',sl7==null?0:sl7>=7?1:-1)}
+ </div>
+</section>`;
+}
 function line(vals,c){
   const w=600,h=160,p=6,n=vals.length;if(n<2)return ND;
   const lo=Math.min(0,...vals),hi=Math.max(0,...vals),rg=hi-lo||1;
@@ -524,6 +547,7 @@ function render(){
   ${gauge([[Math.min(1,t.cw/150),'sg']],pct(t.cw,150))}
   ${lg('bgp','This week',Math.round(t.cw)+' / 150 min')}${lg('bgd','Average pace',pace(t.pace))}${lg('bga','Sessions',t.cn)}</div>
 </section>
+${bodyHTML(t)}
 <section class="g g21">
  ${calendar()}
  <div class="card"><p class="h">Training split</p><div class="k">Sets by muscle group · cardio and mobility by session</div>
@@ -909,7 +933,7 @@ function boot(){setMonth(S.log.length?Math.max(...S.log.map(t=>t.at)):Date.now()
 boot();
 if(R)draw();
 // an entry logged from another app (REWIRE) lands in storage while this page is open: pick it up instead of overwriting it
-addEventListener('storage',e=>{if(e.key===KEY){S=load();render()}});
+addEventListener('storage',e=>{if(e.key===KEY){S=load();render()}else if(e.key==='isx.checkin.v1')render()});
 // another ISIONXXX app can send you straight to an action here (REWIRE's LOG buttons): #do=<action> or a message
 function doAct(a){if(!/^\w+$/.test(a||''))return;const b=document.querySelector(`[data-a="${a}"],[data-act="${a}"]`);if(b)b.click()}
 addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.isx==='do')doAct(e.data.act)});
