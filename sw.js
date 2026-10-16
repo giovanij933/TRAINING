@@ -1,5 +1,5 @@
 // Bump the version string whenever you change index.html so clients pick up the new shell.
-const CACHE = 'isx-training-v17';
+const CACHE = 'isx-training-v18';
 // all ISIONXXX apps share one site and one cache storage: only ever clear this app's own old caches
 const MINE = k => k.startsWith('isx-training-');
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './sync.js', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
