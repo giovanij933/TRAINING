@@ -976,7 +976,7 @@ function heroToday(){
   const cw=Math.round(S.log.filter(e=>e.type==='C'&&e.at>=ws).reduce((a,e)=>a+(+e.mins||0),0));
   const what=e=>e.type==='C'?`${e.mins?Math.round(e.mins)+' min':''}${e.dist?` · ${n1(e.dist)} ${S.du}`:''}`:e.type==='S'?`${e.sets}×${e.reps}s hold`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:''}`;
   return UI.hero({key:'train',title:'Today',sub:W.length?`${W.length} exercise${W.length>1?'s':''} · ${sets} sets`:T.length?'Stretched today':'No workout yet today',
-    big:{value:`${n0(vol)}`,label:`${S.wu} lifted today`},
+    big:{value:`${n0(vol)}`,label:`${S.wu} lifted today`,tone:W.length?'pos':''},   // green once you've trained today
     rings:[{key:'today',label:'Today',value:W.length?1:0,max:1,display:W.length?'trained':'not yet'},{key:'week',label:'Week',value:wk,max:goal,display:`${wk}/${goal}`},{key:'cardio',label:'Cardio',value:cw,max:150,display:`${cw}/150 min`}],
     action:{label:'▶ Start workout',attrs:{'data-a':'go'}},
     log:T.map(e=>({at:e.at,tag:e.ex,text:what(e),tone:e.type==='S'?'':'pos'}))});
