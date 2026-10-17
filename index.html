@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="ui.css">
 <style>
 :root{
   color-scheme:dark;
@@ -236,6 +237,7 @@ dialog.ss .seg button.on{background:var(--amber);color:#000}
 <div id="toast" role="status"></div>
 
 <script src="sync.js" data-keys="isx.training.v1"></script>
+<script src="ui.js"></script>
 <script>
 'use strict';
 const KEY='isx.training.v1', RUN='isx.training.run', PAGE=20;
@@ -544,7 +546,7 @@ function render(){
   const GS=['PUSH','PULL','LEGS','CARDIO','MOBILITY','OTHER'].filter(g=>t.G[g]),gm=Math.max(1,...GS.map(g=>t.G[g].sets));
   const push=t.G.PUSH?.sets||0,pull=t.G.PULL?.sets||0,lift=push+pull+(t.G.LEGS?.sets||0);
 
-  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
+  $('#app').innerHTML=heroToday()+`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
 <section class="g g4">
  <div class="card"><p class="h">Workouts</p><div class="k">This week</div><div class="big ${t.wkDays>=S.goal?'pos':''}">${t.wkDays} / ${S.goal}</div>
   ${gauge([[Math.min(1,t.wkDays/S.goal),'sg']],pct(t.wkDays,S.goal))}
@@ -950,6 +952,21 @@ addEventListener('storage',e=>{if(e.key===KEY){S=load();render()}else if(e.key==
 function doAct(a){if(!/^\w+$/.test(a||''))return;const b=document.querySelector(`[data-a="${a}"],[data-act="${a}"]`);if(b)b.click()}
 addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.isx==='do')doAct(e.data.act)});
 {const m=/do=(\w+)/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>doAct(m[1]),0)}}
+/* ---------- today at a glance (shared hero, timeline and motion from ui.js) ---------- */
+function heroToday(){
+  if(!S.log.length)return '';
+  const day=ms=>ymd(new Date(ms)),t=day(Date.now()),T=S.log.filter(e=>day(e.at)===t).sort((a,b)=>a.at-b.at),W=T.filter(e=>e.type!=='S');
+  const vol=W.filter(e=>e.type==='W').reduce((a,e)=>a+(+e.sets||0)*(+e.reps||0)*(+e.load||0),0),sets=W.reduce((a,e)=>a+(e.type==='C'?0:+e.sets||0),0);
+  const ws=wkStart(Date.now()),goal=S.goal||4,wk=new Set(S.log.filter(e=>e.type!=='S'&&e.at>=ws).map(e=>day(e.at))).size;
+  const cw=Math.round(S.log.filter(e=>e.type==='C'&&e.at>=ws).reduce((a,e)=>a+(+e.mins||0),0));
+  const what=e=>e.type==='C'?`${e.mins?Math.round(e.mins)+' min':''}${e.dist?` · ${n1(e.dist)} ${S.du}`:''}`:e.type==='S'?`${e.sets}×${e.reps}s hold`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:''}`;
+  return UI.hero({key:'train',title:'Today',sub:W.length?`${W.length} exercise${W.length>1?'s':''} · ${sets} sets`:T.length?'Stretched today':'No workout yet today',
+    big:{value:`${n0(vol)}`,label:`${S.wu} lifted today`},
+    rings:[{key:'today',label:'Today',value:W.length?1:0,max:1,display:W.length?'trained':'not yet'},{key:'week',label:'Week',value:wk,max:goal,display:`${wk}/${goal}`},{key:'cardio',label:'Cardio',value:cw,max:150,display:`${cw}/150 min`}],
+    action:{label:'▶ Start workout',attrs:{'data-a':'go'}}})
+  +UI.timeline({items:T.map(e=>({at:e.at,tag:e.ex,text:what(e),tone:e.type==='S'?'':'pos'})),empty:'No exercises yet today. Start a workout and each one shows up here.'});
+}
+{const r0=render;render=function(...a){r0.apply(this,a);UI.animate($('#app'),{onDone:l=>toast(`${l.join(' + ')} goal met ✓`)})};UI.animate($('#app'))}
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
 </body>
