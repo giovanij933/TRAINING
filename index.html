@@ -20,7 +20,7 @@
 :root{
   color-scheme:dark;
   --bg:#070707;--panel:#0c0c0c;--line:#1c1c1c;--line2:#2c2c2c;
-  --tx:#d9d5c8;--dim:#78746a;--amber:#ffb000;--green:#33ff66;--red:#ff4545;
+  --tx:#d9d5c8;--dim:#8f8a7e;--amber:#ffb000;--green:#33ff66;--red:#ff4545;
   --f:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box}
@@ -102,7 +102,7 @@ button:hover,select:hover{border-color:var(--amber);color:var(--amber)}
 .radar .rv{fill:rgba(255,176,0,.16);stroke:var(--amber);stroke-width:1.5}
 .radar text{fill:var(--dim);font:10px var(--f);letter-spacing:.08em}
 
-.tw{overflow-x:auto}
+.tw{overflow-x:auto;position:relative}
 table{width:100%;min-width:980px;border-collapse:collapse}
 th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
 th{font-size:11px;font-weight:500;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
@@ -211,11 +211,12 @@ dialog.ss .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:0;ma
 dialog.ss .seg button{border:0;border-right:1px solid var(--line2);padding:11px 2px;text-align:center;background:none;font-size:12px;transition:background-color .18s,color .18s}
 dialog.ss .seg button:last-child{border-right:0}
 dialog.ss .seg button.on{background:var(--amber);color:#000}
+h1.brand{margin:0}
 </style>
 </head>
 <body>
 <header class="top">
-  <div class="brand">ISIONXXX <b>//</b> TRAINING<i class="cur"></i></div>
+  <h1 class="brand">ISIONXXX <b>//</b> TRAINING<i class="cur"></i></h1>
   <div class="acts">
     <button class="pri" data-a="go">&#9654; START</button>
     <button data-a="add">+ LOG</button>
@@ -504,7 +505,7 @@ function table(T){
    <td class="r">${e.d==null?`<span class="dim">${e.base?'BASE':'—'}</span>`:`<b class="${cls(e.d)}">${pc(e.d,1)}</b>`}</td>
    <td class="r">${e.note?`<span class="amb" title="${esc(e.note)}">*</span> `:''}<button data-a="edit" data-v="${e.id}">EDIT</button> <button data-a="del" data-v="${e.id}" aria-label="Delete entry">X</button></td></tr>`}).join('');
   return `<div class="card"><div class="rowh"><p class="h">Log</p><button data-a="csv">EXPORT CSV</button></div>
-  <div class="tw"><table><thead><tr><th>Time (local)</th><th>Exercise</th><th>Type</th><th class="r">Sets</th><th class="r">Reps</th><th class="r">Load</th><th class="r">Dist</th><th>Time</th><th class="r">RPE</th><th class="r">Perf</th><th class="r">&Delta; vs last</th><th></th></tr></thead>
+  <div class="tw" tabindex="0" role="region" aria-label="Table"><table><thead><tr><th>Time (local)</th><th>Exercise</th><th>Type</th><th class="r">Sets</th><th class="r">Reps</th><th class="r">Load</th><th class="r">Dist</th><th>Time</th><th class="r">RPE</th><th class="r">Perf</th><th class="r">&Delta; vs last</th><th><span class="ui-sr">Actions</span></th></tr></thead>
   <tbody>${body||'<tr><td colspan="12" class="dim">No entries in this view_</td></tr>'}</tbody></table></div>
   <div class="calf"><div><button data-a="pp">&lt;</button> Page <b>${U.page+1}</b> of ${pages} <button data-a="pn">&gt;</button></div><span class="dim">${rows.length} record${rows.length===1?'':'s'}</span></div></div>`;
 }
@@ -832,7 +833,7 @@ function entries(){
 function finishView(){
   const E=entries(),tv=E.reduce((a,e)=>a+vol(e),0),sets=E.reduce((a,e)=>a+e.sets,0);
   dlg.innerHTML=`<form id="ff"><h3>${R.day} DAY DONE // ${fm((Date.now()-R.start)/60000)}</h3>
-  <div class="tw"><table class="sm" style="min-width:0"><tbody>${E.map(e=>`<tr><td>${esc(e.ex)}</td><td class="r">${e.type==='C'?`${n1(e.dist)} ${S.du} · ${fm(e.mins)}`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:e.type==='S'?'s':''}`}</td></tr>`).join('')||'<tr><td class="dim">Nothing logged yet_</td></tr>'}</tbody></table></div>
+  <div class="tw" tabindex="0" role="region" aria-label="Table"><table class="sm" style="min-width:0"><tbody>${E.map(e=>`<tr><td>${esc(e.ex)}</td><td class="r">${e.type==='C'?`${n1(e.dist)} ${S.du} · ${fm(e.mins)}`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:e.type==='S'?'s':''}`}</td></tr>`).join('')||'<tr><td class="dim">Nothing logged yet_</td></tr>'}</tbody></table></div>
   <p class="dim" style="margin:10px 0">${sets} sets${tv?` · ${n0(tv)} ${S.wu} volume`:''}</p>
   <div class="fgrid"><label>Session RPE (1–10)<input name="rpe" type="number" min="1" max="10" step="0.5"></label></div>
   <label>Note<textarea name="note" rows="3" placeholder="Sleep. Energy. What moved well."></textarea></label>
