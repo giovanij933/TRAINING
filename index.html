@@ -964,8 +964,8 @@ function heroToday(){
   return UI.hero({key:'train',title:'Today',sub:W.length?`${W.length} exercise${W.length>1?'s':''} · ${sets} sets`:T.length?'Stretched today':'No workout yet today',
     big:{value:`${n0(vol)}`,label:`${S.wu} lifted today`},
     rings:[{key:'today',label:'Today',value:W.length?1:0,max:1,display:W.length?'trained':'not yet'},{key:'week',label:'Week',value:wk,max:goal,display:`${wk}/${goal}`},{key:'cardio',label:'Cardio',value:cw,max:150,display:`${cw}/150 min`}],
-    action:{label:'▶ Start workout',attrs:{'data-a':'go'}}})
-  +UI.timeline({items:T.map(e=>({at:e.at,tag:e.ex,text:what(e),tone:e.type==='S'?'':'pos'})),empty:'No exercises yet today. Start a workout and each one shows up here.'});
+    action:{label:'▶ Start workout',attrs:{'data-a':'go'}},
+    log:T.map(e=>({at:e.at,tag:e.ex,text:what(e),tone:e.type==='S'?'':'pos'}))});
 }
 {const r0=render;render=function(...a){r0.apply(this,a);UI.animate($('#app'),{onDone:l=>toast(`${l.join(' + ')} goal met ✓`)})};UI.animate($('#app'))}
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
