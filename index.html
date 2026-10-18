@@ -472,24 +472,26 @@ const ev=(label,val,v)=>`<div class="ev"><span><i class="dot ${v>0?'bgp':v<0?'bg
 const kv=(k,v)=>`<div><span class="k">${k}</span><b>${v}</b></div>`;
 
 function calendar(){
-  const D={};view(false).forEach(e=>{D[e.day]??={d:0,n:0};D[e.day].d+=e.d||0;D[e.day].n++});
+  // the change is an average per exercise (only entries with an earlier session to compare with), not a sum: a sum grows
+  // with how many exercises you log, so six lifts at +3% each read as +18% for the day and hundreds of % a month
+  const D={};view(false).forEach(e=>{const x=D[e.day]??={d:0,c:0,n:0};x.n++;if(e.d!=null){x.d+=e.d;x.c++}});
   const {y,m}=U.month,lead=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate(),rows=Math.ceil((lead+dim)/7),today=ymd(new Date());
   const cell=(p,nn)=>`<b class="${cls(p)}">${pc(p,1)}</b><em>${nn} entr${nn>1?'ies':'y'}</em>`;
-  let h='',tot=0,nT=0,wd=0,ld=0,td=0;
+  let h='',tot=0,cT=0,nT=0,wd=0,ld=0,td=0;
   for(let r=0;r<rows;r++){
-    let ws=0,wn=0;
+    let ws=0,wc=0,wn=0;
     for(let c=0;c<7;c++){
       const d=r*7+c-lead+1;
       if(d<1||d>dim){h+='<div class="cd off"></div>';continue}
-      const k=`${y}-${pad(m+1)}-${pad(d)}`,x=D[k],p=x?r2(x.d):0;
-      if(x){ws+=p;wn+=x.n;tot+=p;nT+=x.n;td++;if(p>0)wd++;else if(p<0)ld++}
+      const k=`${y}-${pad(m+1)}-${pad(d)}`,x=D[k],p=x&&x.c?r2(x.d/x.c):0;
+      if(x){ws+=x.d;wc+=x.c;wn+=x.n;tot+=x.d;cT+=x.c;nT+=x.n;td++;if(p>0)wd++;else if(p<0)ld++}
       h+=`<button class="cd${c%6?'':' we'}${p>0?' p':p<0?' n':x?' z':''}${k===U.range?' sel':''}${k===today?' now':''}" data-a="day" data-v="${k}"><span>${d}${S.notes[k]?' <i class="amb">*</i>':''}</span>${x?cell(p,x.n):''}</button>`;
     }
-    h+=`<div class="cd wk">${wn?cell(r2(ws),wn):'<em>—</em>'}</div>`;
+    h+=`<div class="cd wk">${wn?cell(wc?r2(ws/wc):0,wn):'<em>—</em>'}</div>`;
   }
-  tot=r2(tot);
+  tot=cT?r2(tot/cT):0;
   return `<div class="card">
-  <div class="rowh"><div><p class="h">Training calendar</p><div class="k">Strength change this month</div><div class="big ${cls(tot)}">${pc(tot,1)}</div></div>
+  <div class="rowh"><div><p class="h">Training calendar</p><div class="k">Avg strength change per exercise, this month</div><div class="big ${cls(tot)}">${pc(tot,1)}</div></div>
    <div>Stronger: <b class="pos">${wd}</b> &nbsp; Weaker: <b class="neg">${ld}</b></div></div>
   <div class="cal">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
   <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">TODAY</button></div>
@@ -918,7 +920,7 @@ function sample(){
     const add=(ex,f)=>{const type=XT[ex];if(!type)return;S.log.push({id:uid(),at:t,ex,type,sets:0,reps:0,load:0,dist:0,mins:0,rpe:0,note:'',...f});t+=(type==='S'?2:8)*6e4};
     for(const day of days){
       if(day==='CARDIO'){const [ex,mi,min]=CARDIO[cardio++%CARDIO.length];add(ex,{dist:D(Math.round((mi+wk*.1)*10)/10),mins:Math.round(min-wk*.5),rpe:6+wk%2})}
-      else if(day==='STRETCH')PICK.STRETCH.forEach(ex=>add(ex,{sets:2,reps:30+(wk>1?15:0)}));
+      else if(day==='STRETCH')PICK.STRETCH.forEach(ex=>add(ex,{sets:2,reps:30+(wk>1?5:0)}));
       else [...PICK[day],ACC[day][wk%ACC[day].length]].forEach(ex=>{
         if(W[ex]){const [sets,reps,lb,up]=W[ex];add(ex,{sets,reps,load:L(lb+up*wk),rpe:7+(wk%2)*.5+(reps<=5?1:0)})}
         else if(B[ex]){const [sets,reps,up]=B[ex];add(ex,{sets,reps:reps+up*wk,rpe:8})}});
