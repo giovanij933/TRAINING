@@ -977,11 +977,11 @@ function review(day){
   const cw=e=>`${e.dist?`${n1(e.dist)} ${S.du} in `:''}${mn(e.mins)}${e.dist&&e.mins?` (${pace(e.mins/e.dist)})`:''}`;
   // the day
   const span=T.length>1?(T.at(-1).at-T[0].at)/6e4:0,kt=me.c?'a <b>cardio</b> session':`a <b>${me.t.replace(/ (day|session)$/,'')}</b> ${/day$/.test(me.t)?'day':'session'}`;
-  let p=`On <b>${pd(day).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</b> you did ${kt}: `+
+  let p=`On <b>${pd(day).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</b> I did ${kt}: `+
     (Lf.length?`${pl(nx,'exercise')} for ${pl(me.sets,'set')}${me.vol?` and <b>${n0(me.vol)} ${S.wu}</b> of volume (weight × reps)`:''}.`
     :C.length?`${C.map(e=>`${esc(e.ex)}, ${cw(e)}`).join('; ')}.`:`${pl(ns,'stretch','stretches')}, ${pl(St.reduce((s,e)=>s+e.sets,0),'hold')}.`);
-  if(Lf.length&&C.length)p+=` You also did cardio: ${C.map(e=>`${esc(e.ex)}, ${cw(e)}`).join('; ')}.`;
-  if(St.length&&(Lf.length||C.length))p+=` You stretched too (${pl(ns,'stretch','stretches')}).`;
+  if(Lf.length&&C.length)p+=` I also did cardio: ${C.map(e=>`${esc(e.ex)}, ${cw(e)}`).join('; ')}.`;
+  if(St.length&&(Lf.length||C.length))p+=` I stretched too (${pl(ns,'stretch','stretches')}).`;
   if(span>=1)p+=` From first to last entry the session ran ${mn(span)}.`;
   let out=sec('The day',`<p>${p}</p>${U.ex==='all'?'':`<p>Only <b>${esc(T[0].ex)}</b> is shown here: the exercise filter is on.</p>`}`);
   // in context: the last session of the same kind and the average of up to 8 before it
@@ -990,12 +990,12 @@ function review(day){
   const vsL=last&&key&&last[key]?(me[key]-last[key])/last[key]*100:null,av=key?avg(P.map(x=>x[key]).filter(v=>v>0)):null,vsA=av?(me[key]-av)/av*100:null;
   // the gap, the week and its streak are about workouts, so they count every exercise
   const DA=[...new Set(S.log.map(e=>ymd(new Date(e.at))))].sort(),prevDay=U.ex==='all'?DA.filter(k=>k<day).at(-1):null,off=prevDay?gap(prevDay,day):0;
-  let c1=lk?`Your last ${esc(me.t)} was ${dl(lk)}, ${pl(gap(lk,day),'day')} earlier.`:`This was your first ${esc(me.t)}${U.ex==='all'?'':' with this exercise'}, so there's nothing like it to compare with yet.`;
-  if(vsL!=null)c1+=` You did ${fk(me[key])}${key==='vol'?' of volume':''}, ${Math.abs(vsL)<.5?'about the same as':chg(vsL)+' vs'} the ${fk(last[key])} of that session.`;
-  if(P.length>1&&vsA!=null)c1+=` Your average over the last ${pl(P.length,'such session')} is ${fk(av)}, so this was ${vsA>=10?'<b>above</b> average':vsA<=-10?'<b>below</b> average':'about average'}.`;
+  let c1=lk?`My last ${esc(me.t)} was ${dl(lk)}, ${pl(gap(lk,day),'day')} earlier.`:`This was my first ${esc(me.t)}${U.ex==='all'?'':' with this exercise'}, so there's nothing like it to compare with yet.`;
+  if(vsL!=null)c1+=` I did ${fk(me[key])}${key==='vol'?' of volume':''}, ${Math.abs(vsL)<.5?'about the same as':chg(vsL)+' vs'} the ${fk(last[key])} of that session.`;
+  if(P.length>1&&vsA!=null)c1+=` My average over the last ${pl(P.length,'such session')} is ${fk(av)}, so this was ${vsA>=10?'<b>above</b> average':vsA<=-10?'<b>below</b> average':'about average'}.`;
   const WK=new Set(DA.map(k=>wkStart(pd(k).getTime()))),w0=wkStart(pd(day).getTime()),goal=S.goal||4;
   const wk=DA.filter(k=>k<=day&&wkStart(pd(k).getTime())===w0).length;let st=0;for(let w=w0;WK.has(w);w=wkStart(w-3*864e5))st++;
-  const c2=`By the end of the day you had <b class="${wk>=goal?'pos':''}">${pl(wk,'workout')}</b> in for the week against a goal of ${goal}${wk>=goal?', so the goal was met':''}.${st>=2?` That makes ${st} weeks in a row with training.`:''}`;
+  const c2=`By the end of the day I had <b class="${wk>=goal?'pos':''}">${pl(wk,'workout')}</b> in for the week against a goal of ${goal}${wk>=goal?', so the goal was met':''}.${st>=2?` That makes ${st} weeks in a row with training.`:''}`;
   out+=sec('In context',`<p>${c1}</p><p>${c2}</p>`);
   // each exercise in order: what you did, effort, change versus last time, PR and note
   const sx=e=>e.type==='C'?cw(e):e.type==='S'?`${e.sets} × ${e.reps}s hold`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:' bodyweight'}`;
@@ -1011,31 +1011,31 @@ function review(day){
   if(PR.length)good.push(`${PR.length===1?'A new personal best':'New personal bests'} on ${nm(PR)}.`);
   if(up.length)good.push(`Up on last time: ${list(up.map(e=>`${esc(e.ex)} (${chg(e.d)})`))}.`);
   if(!dn.length&&T.some(e=>e.d!=null))good.push('Nothing went backwards against last time.');
-  if(wk===goal)good.push(`This session hit your weekly goal of ${pl(goal,'workout')}.`);else if(wk>goal)good.push(`You're past your weekly goal: ${wk} workouts against ${goal}.`);
+  if(wk===goal)good.push(`This session hit my weekly goal of ${pl(goal,'workout')}.`);else if(wk>goal)good.push(`I'm past my weekly goal: ${wk} workouts against ${goal}.`);
   if(R.length>=3&&rmax-rmin<=1&&rmax<9)good.push(rmin===rmax?`Effort was steady: every rated set was RPE ${rmin}.`:`Effort was steady: RPE stayed between ${rmin} and ${rmax}.`);
   if(dn.length)look.push(`Down on last time: ${list(dn.map(e=>`${esc(e.ex)} (${chg(e.d)})`))}.`);
   if(hi)look.push(`${hs===rs?`All ${rs}`:`${hs} of ${rs}`} rated sets were at RPE 9 or higher: close to failure for most of the session.`);
   miss.forEach(m=>look.push(`${m.g} hasn't been trained in ${m.n} days (last on ${dl(m.k)}).`));
-  if(off>=5)look.push(`It had been ${off} days since your previous session on ${dl(prevDay)}.`);
-  if(low)look.push(`${key==='vol'?'Volume':key==='dist'?'Distance':'Work'} was well below your last ${esc(me.t)} (${chg(vsL)}).`);
+  if(off>=5)look.push(`It had been ${off} days since my previous session on ${dl(prevDay)}.`);
+  if(low)look.push(`${key==='vol'?'Volume':key==='dist'?'Distance':'Work'} was well below my last ${esc(me.t)} (${chg(vsL)}).`);
   out+=sec('What went well',good.length?ul(good):'<p>Nothing stands out in the numbers. Look at how the session felt instead.</p>');
   out+=sec('What to look at',look.length?ul(look):'<p>No warning signs in the numbers.</p>');
   // the morning check-in from TODAY, with the same readiness call as the Recovery card
   const ci=checkins().find(e=>e.day===day);
   if(ci&&ci.sleep>0){const r=rdy(ci);
-    out+=sec('Your state',`<p>You slept <b>${n1(ci.sleep)} h</b> (${(CQ[ci.q]||'unrated').toLowerCase()} sleep) and your energy was <b>${(CE[ci.energy]||'unrated').toLowerCase()}</b>. `+
+    out+=sec('My state',`<p>I slept <b>${n1(ci.sleep)} h</b> (${(CQ[ci.q]||'unrated').toLowerCase()} sleep) and my energy was <b>${(CE[ci.energy]||'unrated').toLowerCase()}</b>. `+
       `Readiness that morning said <b class="${cls(r[1])}">${r[0].replace(' today','').toLowerCase()}</b>.`+
-      (r[1]<0&&PR.length?' You still set a PR, so the numbers held up.':r[1]<0&&dn.length?' That may explain the dip.':r[1]>0&&dn.length?' You were well rested, so the dip is worth a closer look.':r[1]>0&&PR.length?' Good recovery turned into a PR.':'')+'</p>')}
-  out+=sec('Your notes',S.notes[day]?`<blockquote>${esc(S.notes[day])}</blockquote>`:'<p>No notes for this day yet.</p>');
+      (r[1]<0&&PR.length?' I still set a PR, so the numbers held up.':r[1]<0&&dn.length?' That may explain the dip.':r[1]>0&&dn.length?' I was well rested, so the dip is worth a closer look.':r[1]>0&&PR.length?' Good recovery turned into a PR.':'')+'</p>')}
+  out+=sec('My notes',S.notes[day]?`<blockquote>${esc(S.notes[day])}</blockquote>`:'<p>No notes for this day yet.</p>');
   // questions, most specific first
-  const q=['Did you do the session you planned? What did you add, skip or change on the day?'];
+  const q=['Did I do the session I planned? What did I add, skip or change on the day?'];
   if(dn.length)q.push(`What was different for ${nm(dn)} today: sleep, food, warm-up or the order of exercises?`);
-  if(hi)q.push('Were the RPE 9+ sets planned, or did the loads get away from you?');
-  if(PR.length)q.push(`What made ${PR.length>1?`today's ${PR.length} PRs`:`the ${nm(PR)} PR`} possible, and how will you build on ${PR.length>1?'them':'it'}?`);
-  if(miss.length)q.push(`When will you train ${list(miss.map(m=>m.g))} next?`);
-  if(off>=5)q.push(`What kept you away for ${off} days, and what will protect the next session?`);
+  if(hi)q.push('Were the RPE 9+ sets planned, or did the loads get away from me?');
+  if(PR.length)q.push(`What made ${PR.length>1?`today's ${PR.length} PRs`:`the ${nm(PR)} PR`} possible, and how will I build on ${PR.length>1?'them':'it'}?`);
+  if(miss.length)q.push(`When will I train ${list(miss.map(m=>m.g))} next?`);
+  if(off>=5)q.push(`What kept me away for ${off} days, and what will protect the next session?`);
   if(low)q.push('Was the lighter session planned (a deload or a short day), or did it get cut short?');
-  if(C.length&&!Lf.length)q.push('Was the effort where you wanted it: easy enough to talk, or hard on purpose?');
+  if(C.length&&!Lf.length)q.push('Was the effort where I wanted it: easy enough to talk, or hard on purpose?');
   q.push('One thing to keep doing next session. One thing to change.');
   out+=sec('Questions to answer',`<ol>${q.map(x=>`<li>${x}</li>`).join('')}</ol>`);
   return out;
