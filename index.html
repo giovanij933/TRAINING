@@ -35,7 +35,7 @@ button:hover,select:hover{border-color:var(--amber);color:var(--amber)}
 .pri{background:var(--amber);border-color:var(--amber);color:#000;font-weight:600}
 .pri:hover{color:#000;filter:brightness(1.12)}
 .pos{color:var(--green)}.neg{color:var(--red)}.dim{color:var(--dim)}.amb{color:var(--amber)}
-.bgp{background:var(--green)}.bga{background:var(--amber)}.bgn{background:var(--red)}.bgd{background:var(--line2)}
+.bgp{background:var(--green)}.bga{background:var(--amber)}.bgn{background:var(--red)}.bgd{background:var(--line2)}.bgm{background:var(--dim)}
 .r{text-align:right}
 .pr{color:var(--amber);border:1px solid var(--amber);font-size:10px;padding:0 4px;margin-left:6px}
 
@@ -556,16 +556,16 @@ function render(){
 <section class="g g4">
  <div class="card"><p class="h">Workouts</p><div class="k">This week</div><div class="big ${t.wkDays>=S.goal?'pos':''}">${t.wkDays} / ${S.goal}</div>
   ${gauge([[Math.min(1,t.wkDays/S.goal),'sg']],pct(t.wkDays,S.goal))}
-  ${lg('bgp','This week',t.wkDays)}${lg('bgd','Last week',t.lastDays)}${lg('bga','Week streak',t.streak+' wk')}</div>
+  ${lg('bgp','This week',t.wkDays)}${lg('bgd','Last week',t.lastDays)}${lg('bgd','Week streak',t.streak+' wk')}</div>
  <div class="card"><p class="h">Volume</p><div class="k">Weight × reps, this week</div><div class="big">${n0(t.wkVol)} ${S.wu}</div>
   ${gauge([[t.lastVol?Math.min(1,t.wkVol/t.lastVol):0,'sg']],vd==null?'—':pc(vd,1))}
-  ${lg('bgp','This week',n0(t.wkVol))}${lg('bgd','Last week',n0(t.lastVol))}${lg('bga','Sets in range',s.sets)}</div>
+  ${lg('bgp','This week',n0(t.wkVol))}${lg('bgd','Last week',n0(t.lastVol))}${lg('bgd','Sets in range',s.sets)}</div>
  <div class="card"><p class="h">Personal records</p><div class="k">In range</div><div class="big ${s.prs?'pos':''}">${s.prs}</div>
   ${gauge([[n?s.w/n:0,'sg'],[n?s.be/n:0,'sd'],[n?s.l/n:0,'sr']],n?Math.round(s.wr)+'%':'—')}
-  ${lg('bgp','Progressing',s.w,pct(s.w,n))}${lg('bgd','Holding',s.be,pct(s.be,n))}${lg('bgn','Regressing',s.l,pct(s.l,n))}</div>
+  ${lg('bgp','Progressing',s.w,pct(s.w,n))}${lg('bgm','Holding',s.be,pct(s.be,n))}${lg('bgn','Regressing',s.l,pct(s.l,n))}</div>
  <div class="card"><p class="h">Cardio</p><div class="k">Distance in range</div><div class="big">${n1(t.cd)} ${S.du}</div>
   ${gauge([[Math.min(1,t.cw/150),'sg']],pct(t.cw,150))}
-  ${lg('bgp','This week',Math.round(t.cw)+' / 150 min')}${lg('bgd','Average pace',pace(t.pace))}${lg('bga','Sessions',t.cn)}</div>
+  ${lg('bgp','This week',Math.round(t.cw)+' / 150 min')}${lg('bgd','Average pace',pace(t.pace))}${lg('bgd','Sessions',t.cn)}</div>
 </section>
 ${bodyHTML(t)}
 <section class="g g21">
