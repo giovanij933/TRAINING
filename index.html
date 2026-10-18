@@ -897,20 +897,33 @@ function exportCSV(){
   dl(`training-${ymd(new Date())}.csv`,rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');
 }
 function sample(){
-  // ten sessions over the last three weeks: days ago, exercise, type, sets, reps, load, distance, minutes, RPE
-  const n=new Date();let prev=-1,i=0;
-  [[22,'Back Squat','W',3,5,185,0,0,7],[22,'Bench Press','W',3,5,135,0,0,7],[22,'Pull-up','B',3,6,0,0,0,8],
-   [20,'Deadlift','W',1,5,225,0,0,7],[20,'Overhead Press','W',3,5,85,0,0,7],[20,'Run','C',0,0,0,3,28,6],
-   [18,'Back Squat','W',3,5,190,0,0,7.5],[18,'Bench Press','W',3,5,140,0,0,8],[18,'Pull-up','B',3,7,0,0,0,8],
-   [15,'Deadlift','W',1,5,235,0,0,8],[15,'Overhead Press','W',3,5,90,0,0,8],[15,'Run','C',0,0,0,3,27.25,7],
-   [13,'Back Squat','W',3,5,195,0,0,8],[13,'Bench Press','W',3,4,140,0,0,9],[13,'Pull-up','B',3,7,0,0,0,8],
-   [11,'Deadlift','W',1,5,245,0,0,8.5],[11,'Overhead Press','W',3,4,90,0,0,9],[11,'Run','C',0,0,0,3,28.5,7],
-   [8,'Back Squat','W',3,5,200,0,0,8],[8,'Bench Press','W',3,5,140,0,0,8],[8,'Pull-up','B',3,8,0,0,0,9],
-   [6,'Deadlift','W',1,5,245,0,0,8],[6,'Overhead Press','W',3,5,90,0,0,8],[6,'Run','C',0,0,0,3.1,27,7],
-   [4,'Back Squat','W',3,3,200,0,0,9.5],[4,'Bench Press','W',3,5,145,0,0,8.5],[4,'Pull-up','B',3,8,0,0,0,9],
-   [1,'Deadlift','W',1,5,255,0,0,9],[1,'Overhead Press','W',3,5,92.5,0,0,8.5],[1,'Run','C',0,0,0,3.1,26.5,8]]
-  .forEach(([ago,ex,type,sets,reps,load,dist,mins,rpe])=>{i=ago===prev?i+1:0;prev=ago;
-    S.log.push({id:uid(),at:new Date(n.getFullYear(),n.getMonth(),n.getDate()-ago,6,30+20*i).getTime(),ex,type,sets,reps,load,dist,mins,rpe,note:''})});
+  // four weeks of the app's own split, built from the exercise library: each PUSH / PULL / LEGS day is that day's
+  // default picks (PICK) plus one rotating accessory, CARDIO rotates machines, STRETCH runs the default holds.
+  // Loads climb a little each week; numbers follow your units.
+  const kg=S.wu==='kg',km=S.du==='km',L=lb=>kg?Math.round(lb*.4536/2.5)*2.5:lb,D=mi=>km?Math.round(mi*1.609*10)/10:mi;
+  // [sets, reps, starting load in lb, lb added a week] for weighted lifts; [sets, starting reps, reps added a week] for bodyweight
+  const W={'Bench Press':[3,5,135,5],'Overhead Press':[3,5,85,2.5],'Incline Dumbbell Press':[3,8,50,2.5],'Lateral Raise':[3,12,15,0],'Triceps Pushdown':[3,10,40,5],
+    'Dumbbell Bench Press':[3,8,55,2.5],'Cable Fly':[3,12,30,2.5],'Deadlift':[2,5,225,10],'Barbell Row':[3,6,115,5],'Face Pull':[3,15,35,2.5],'Dumbbell Curl':[3,10,25,0],
+    'Lat Pulldown':[3,10,120,5],'Hammer Curl':[3,10,25,2.5],'Back Squat':[3,5,185,10],'Romanian Deadlift':[3,8,155,10],'Leg Press':[3,10,270,10],'Leg Curl':[3,12,80,5],
+    'Standing Calf Raise':[3,12,120,10],'Bulgarian Split Squat':[3,8,40,5],'Hip Thrust':[3,8,185,10],'Leg Extension':[3,12,90,5]};
+  const B={'Pull-up':[3,6,1],'Dip':[3,8,1],'Chin-up':[3,6,1]};
+  const ACC={PUSH:['Dumbbell Bench Press','Cable Fly','Dip'],PULL:['Lat Pulldown','Hammer Curl','Chin-up'],LEGS:['Bulgarian Split Squat','Hip Thrust','Leg Extension']};
+  const CARDIO=[['Run',3,28],['Row Erg',3.1,22],['Incline Walk',2,35],['Bike',8,30]];
+  // the week, Monday first: [day plan(s)]
+  const PLAN={1:['PUSH'],2:['PULL'],3:['CARDIO'],4:['LEGS'],6:['CARDIO','STRETCH']};
+  const n=new Date();let cardio=0;
+  for(let ago=27;ago>=1;ago--){
+    const d=new Date(n.getFullYear(),n.getMonth(),n.getDate()-ago),days=PLAN[d.getDay()];if(!days)continue;
+    const wk=3-Math.floor((ago-1)/7);let t=new Date(d.getFullYear(),d.getMonth(),d.getDate(),6,30).getTime();
+    const add=(ex,f)=>{const type=XT[ex];if(!type)return;S.log.push({id:uid(),at:t,ex,type,sets:0,reps:0,load:0,dist:0,mins:0,rpe:0,note:'',...f});t+=(type==='S'?2:8)*6e4};
+    for(const day of days){
+      if(day==='CARDIO'){const [ex,mi,min]=CARDIO[cardio++%CARDIO.length];add(ex,{dist:D(Math.round((mi+wk*.1)*10)/10),mins:Math.round(min-wk*.5),rpe:6+wk%2})}
+      else if(day==='STRETCH')PICK.STRETCH.forEach(ex=>add(ex,{sets:2,reps:30+(wk>1?15:0)}));
+      else [...PICK[day],ACC[day][wk%ACC[day].length]].forEach(ex=>{
+        if(W[ex]){const [sets,reps,lb,up]=W[ex];add(ex,{sets,reps,load:L(lb+up*wk),rpe:7+(wk%2)*.5+(reps<=5?1:0)})}
+        else if(B[ex]){const [sets,reps,up]=B[ex];add(ex,{sets,reps:reps+up*wk,rpe:8})}});
+    }
+  }
   save();boot();
 }
 
