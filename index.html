@@ -1011,7 +1011,7 @@ function review(day){
   if(PR.length)good.push(`${PR.length===1?'A new personal best':'New personal bests'} on ${nm(PR)}.`);
   if(up.length)good.push(`Up on last time: ${list(up.map(e=>`${esc(e.ex)} (${chg(e.d)})`))}.`);
   if(!dn.length&&T.some(e=>e.d!=null))good.push('Nothing went backwards against last time.');
-  if(wk===goal)good.push(`This session hit my weekly goal of ${pl(goal,'workout')}.`);else if(wk>goal)good.push(`I'm past my weekly goal: ${wk} workouts against ${goal}.`);
+  if(wk===goal)good.push(`This session hit my weekly goal of ${pl(goal,'workout')}.`);else if(wk>goal)good.push(`I was past my weekly goal: ${wk} workouts against ${goal}.`);
   if(R.length>=3&&rmax-rmin<=1&&rmax<9)good.push(rmin===rmax?`Effort was steady: every rated set was RPE ${rmin}.`:`Effort was steady: RPE stayed between ${rmin} and ${rmax}.`);
   if(dn.length)look.push(`Down on last time: ${list(dn.map(e=>`${esc(e.ex)} (${chg(e.d)})`))}.`);
   if(hi)look.push(`${hs===rs?`All ${rs}`:`${hs} of ${rs}`} rated sets were at RPE 9 or higher: close to failure for most of the session.`);
