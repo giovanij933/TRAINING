@@ -498,8 +498,13 @@ function calendar(){
    <span class="dim">${td} training day${td===1?'':'s'} · ${nT} entr${nT===1?'y':'ies'}</span></div></div>`;
 }
 
+// the log's columns, for sorting and filtering (UI.filter); the last column holds the row's buttons
+const LOGC=[{label:'Time (local)',get:e=>e.at,type:'time'},{label:'Exercise',get:e=>e.ex},{label:'Type',get:e=>TYPES[e.type]},
+  {label:'Sets',get:e=>e.type==='C'?null:e.sets,type:'num'},{label:'Reps',get:e=>e.type==='C'?null:e.reps,type:'num'},{label:'Load',get:e=>e.type==='W'?e.load:null,type:'num'},
+  {label:'Dist',get:e=>e.type==='C'?e.dist:null,type:'num'},{label:'Time',get:e=>e.type==='C'?e.mins:null,type:'num',unit:'min'},{label:'RPE',get:e=>e.rpe,type:'num'},
+  {label:'Perf',get:e=>perf(e),type:'num'},{label:'Δ vs last',get:e=>e.d,type:'num',unit:'%'},null];
 function table(T){
-  const rows=[...T].reverse(),pages=Math.max(1,Math.ceil(rows.length/PAGE)),na='<span class="dim">—</span>';
+  const F=UI.filter('log',LOGC,()=>{U.page=0;render()}),rows=F.apply([...T].reverse()),pages=Math.max(1,Math.ceil(rows.length/PAGE)),na='<span class="dim">—</span>';
   U.page=Math.min(Math.max(U.page,0),pages-1);
   const body=rows.slice(U.page*PAGE,(U.page+1)*PAGE).map(e=>{const c=e.type==='C';return `<tr>
    <td>${tfmt(e.at)}</td><td><b>${esc(e.ex)}</b>${e.pr?'<span class="pr">PR</span>':''}</td><td class="dim">${TYPES[e.type]}</td>
@@ -509,9 +514,9 @@ function table(T){
    <td class="r">${e.d==null?`<span class="dim">${e.base?'BASE':'—'}</span>`:`<b class="${cls(e.d)}">${pc(e.d,1)}</b>`}</td>
    <td class="r">${e.note?`<span class="amb" title="${esc(e.note)}">*</span> `:''}<button data-a="edit" data-v="${e.id}">EDIT</button> <button data-a="del" data-v="${e.id}" aria-label="Delete entry">X</button></td></tr>`}).join('');
   return `<div class="card"><div class="rowh"><p class="h">Log</p><button data-a="csv">EXPORT CSV</button></div>
-  <div class="tw" tabindex="0" role="region" aria-label="Table"><table><thead><tr><th>Time (local)</th><th>Exercise</th><th>Type</th><th class="r">Sets</th><th class="r">Reps</th><th class="r">Load</th><th class="r">Dist</th><th>Time</th><th class="r">RPE</th><th class="r">Perf</th><th class="r">&Delta; vs last</th><th><span class="ui-sr">Actions</span></th></tr></thead>
+  <div class="tw" tabindex="0" role="region" aria-label="Table"><table><thead><tr><th>${F.th(0)}</th><th>${F.th(1)}</th><th>${F.th(2)}</th><th class="r">${F.th(3)}</th><th class="r">${F.th(4)}</th><th class="r">${F.th(5)}</th><th class="r">${F.th(6)}</th><th>${F.th(7)}</th><th class="r">${F.th(8)}</th><th class="r">${F.th(9)}</th><th class="r">${F.th(10)}</th><th><span class="ui-sr">Actions</span></th></tr></thead>
   <tbody>${body||'<tr><td colspan="12" class="dim">No entries in this view_</td></tr>'}</tbody></table></div>
-  <div class="calf"><div><button data-a="pp">&lt;</button> Page <b>${U.page+1}</b> of ${pages} <button data-a="pn">&gt;</button></div><span class="dim">${rows.length} record${rows.length===1?'':'s'}</span></div></div>`;
+  <div class="calf"><div><button data-a="pp">&lt;</button> Page <b>${U.page+1}</b> of ${pages} <button data-a="pn">&gt;</button></div><span class="dim">${rows.length} record${rows.length===1?'':'s'}${F.clear()}</span></div></div>`;
 }
 
 /* ---------- training metrics (what Strong / Hevy / Fitbod track) ---------- */
