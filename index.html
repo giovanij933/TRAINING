@@ -1001,7 +1001,7 @@ function review(day){
   const sx=e=>e.type==='C'?cw(e):e.type==='S'?`${e.sets} × ${e.reps}s hold`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:' bodyweight'}`;
   const dd=e=>e.d==null?(e.base?' · first time logged':''):` · ${e.type==='C'?'speed ':''}${Math.abs(e.d)<.05?'same as last time':chg(e.d)+' vs last time'}`;
   out+=sec('How it unfolded',`<ol>${T.map(e=>{const tr=[e.type==='W'&&e.reps>1?`est. 1RM ${perfT(e)}`:'',e.note?`<q>${esc(e.note)}</q>`:''].filter(Boolean).join(' · ');
-    return `<li>${hm(e.at)} · <b>${esc(e.ex)}</b> ${sx(e)}${e.rpe>0?` · RPE ${e.rpe}`:''}${dd(e)}${e.pr?' <span class="pr">PR</span>':''}${tr?`<span class="tr"> ${tr}</span>`:''}</li>`}).join('')}</ol>`);
+    return `<li>${hm(e.at)} · <b>${esc(e.ex)}</b> ${sx(e)}${e.rpe>0?` · RPE ${e.rpe}`:''}${dd(e)}${e.pr?'<span class="ui-sr"> ·</span> <span class="pr">PR</span>':''}${tr?`<span class="tr"><span class="ui-sr"> · </span>${tr}</span>`:''}</li>`}).join('')}</ol>`);
   // what went well / what to look at
   const PR=T.filter(e=>e.pr),up=T.filter(e=>e.d>0&&!e.pr),dn=T.filter(e=>e.d<0),R=Lf.filter(e=>e.rpe>0),rs=R.reduce((s,e)=>s+e.sets,0),hs=R.filter(e=>e.rpe>=9).reduce((s,e)=>s+e.sets,0);
   const hi=hs>=3&&hs>=rs/2,low=key!=='mins'&&vsL!=null&&vsL<=-20,rmin=R.length?Math.min(...R.map(e=>e.rpe)):0,rmax=R.length?Math.max(...R.map(e=>e.rpe)):0;
