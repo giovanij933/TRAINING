@@ -401,7 +401,7 @@ function prevBest(ex,type,day,skip){
 }
 // skip leaves one filter out: a card that sets a filter shows everything else, with its own choice highlighted
 // the range filter on its own (weeks start on Sunday): the Today card's tiles count with it too
-const wkOf=s=>{const d=pd(s);d.setDate(d.getDate()-d.getDay());return ymd(d)};
+const wkOf=s=>{const d=pd(s);d.setDate(d.getDate()-(d.getDay()+6)%7);return ymd(d)};
 function inRange(d,r=U.range){const today=ymd(new Date());return r==='all'||(r==='today'?d===today:r==='week'?wkOf(d)===wkOf(today):r==='month'?d.slice(0,7)===today.slice(0,7):d===r)}
 function view(useRange=true,skip=''){
   const wk=wkOf,inR=d=>inRange(d);
@@ -511,7 +511,7 @@ function calendar(){
   // the change is an average per exercise (only entries with an earlier session to compare with), not a sum: a sum grows
   // with how many exercises you log, so six lifts at +3% each read as +18% for the day and hundreds of % a month
   const D={};view(false).forEach(e=>{const x=D[e.day]??={d:0,c:0,n:0};x.n++;if(e.d!=null){x.d+=e.d;x.c++}});
-  const {y,m}=U.month,lead=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate(),rows=Math.ceil((lead+dim)/7),today=ymd(new Date());
+  const {y,m}=U.month,lead=(new Date(y,m,1).getDay()+6)%7,dim=new Date(y,m+1,0).getDate(),rows=Math.ceil((lead+dim)/7),today=ymd(new Date());
   const cell=(p,nn)=>`<b class="${cls(p)}">${pc(p,1)}</b><em>${nn} entr${nn>1?'ies':'y'}</em>`;
   let h='',tot=0,cT=0,nT=0,wd=0,ld=0,td=0;
   for(let r=0;r<rows;r++){
@@ -521,7 +521,7 @@ function calendar(){
       if(d<1||d>dim){h+='<div class="cd off"></div>';continue}
       const k=`${y}-${pad(m+1)}-${pad(d)}`,x=D[k],p=x&&x.c?r2(x.d/x.c):0;
       if(x){ws+=x.d;wc+=x.c;wn+=x.n;tot+=x.d;cT+=x.c;nT+=x.n;td++;if(p>0)wd++;else if(p<0)ld++}
-      h+=`<button class="cd${c%6?'':' we'}${p>0?' p':p<0?' n':x?' z':''}${k===U.range?' sel':''}${k===today?' now':''}" data-a="day" data-v="${k}" title="${dlabel(k)}${x?`: ${pc(p,1)} · ${x.n} entr${x.n>1?'ies':'y'}`:''} — click to ${k===U.range?'show every day':'show this day'}"><span>${d}${S.notes[k]?' <i class="amb">*</i>':''}</span>${x?cell(p,x.n):''}</button>`;
+      h+=`<button class="cd${c<5?'':' we'}${p>0?' p':p<0?' n':x?' z':''}${k===U.range?' sel':''}${k===today?' now':''}" data-a="day" data-v="${k}" title="${dlabel(k)}${x?`: ${pc(p,1)} · ${x.n} entr${x.n>1?'ies':'y'}`:''} — click to ${k===U.range?'show every day':'show this day'}"><span>${d}${S.notes[k]?' <i class="amb">*</i>':''}</span>${x?cell(p,x.n):''}</button>`;
     }
     h+=`<div class="cd wk">${wn?cell(wc?r2(ws/wc):0,wn):'<em>—</em>'}</div>`;
   }
@@ -529,7 +529,7 @@ function calendar(){
   return `<div class="card">
   <div class="rowh"><div><p class="h">Training calendar</p><div class="k">Avg strength change per exercise, this month</div><div class="big ${cls(tot)}">${pc(tot,1)}</div></div>
    <div>Stronger: <b class="pos">${wd}</b> &nbsp; Weaker: <b class="neg">${ld}</b></div></div>
-  <div class="cal">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
+  <div class="cal">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
   <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">TODAY</button></div>
    <span class="dim">${td} training day${td===1?'':'s'} · ${nT} entr${nT===1?'y':'ies'}</span></div></div>`;
 }
@@ -559,7 +559,7 @@ function table(T){
 // muscle group of an exercise: from the workout library, else from its type
 const GROUP={};for(const d of ['PUSH','PULL','LEGS'])for(const t of ['W','B'])(LIB[d][t]||[]).forEach(x=>GROUP[exk(x)]??=d);
 const grp=e=>e.type==='C'?'CARDIO':e.type==='S'?'MOBILITY':GROUP[exk(e.ex)]||'OTHER';
-const wkStart=ms=>{const d=new Date(ms);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return d.getTime()};
+const wkStart=ms=>{const d=new Date(ms);d.setHours(0,0,0,0);d.setDate(d.getDate()-(d.getDay()+6)%7);return d.getTime()};
 function train(T,all=view(false)){
   const w0=wkStart(Date.now()),W=864e5*7;
   const wk=i=>all.filter(e=>e.at>=w0-i*W&&e.at<w0-(i-1)*W);
