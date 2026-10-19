@@ -400,9 +400,11 @@ function prevBest(ex,type,day,skip){
   return best;
 }
 // skip leaves one filter out: a card that sets a filter shows everything else, with its own choice highlighted
+// the range filter on its own (weeks start on Sunday): the Today card's tiles count with it too
+const wkOf=s=>{const d=pd(s);d.setDate(d.getDate()-d.getDay());return ymd(d)};
+function inRange(d,r=U.range){const today=ymd(new Date());return r==='all'||(r==='today'?d===today:r==='week'?wkOf(d)===wkOf(today):r==='month'?d.slice(0,7)===today.slice(0,7):d===r)}
 function view(useRange=true,skip=''){
-  const today=ymd(new Date()),wk=s=>{const d=pd(s);d.setDate(d.getDate()-d.getDay());return ymd(d)};
-  const inR=d=>U.range==='all'||(U.range==='today'?d===today:U.range==='week'?wk(d)===wk(today):U.range==='month'?d.slice(0,7)===today.slice(0,7):d===U.range);
+  const wk=wkOf,inR=d=>inRange(d);
   const x=U.x,on=k=>k!==skip&&x[k]!=null,st=skip==='stat'?'all':U.stat;
   return scored().filter(e=>(skip==='ex'||U.ex==='all'||exk(e.ex)===U.ex)&&(st==='all'||(st==='up'?e.d>0:st==='down'?e.d<0:e.d===0))&&(!useRange||inR(e.day))
     &&(!on('grp')||grp(e)===x.grp)&&(!on('week')||wk(e.day)===x.week));
@@ -1120,6 +1122,7 @@ const ACT={
   clear:()=>{if(confirm('Delete ALL entries and notes on this device?')){S={...S,log:[],notes:{}};save();U.range='all';boot()}},
   prev:()=>shift(-1),next:()=>shift(1),tod:()=>{setMonth(Date.now());render()},
   day:v=>{U.range=U.range===v?'all':v;U.page=0;render()},
+  rng:v=>{U.range=U.range===v?'all':v;U.page=0;render()},   // the Today card's period tiles; tap again for all time
   xf:v=>{const i=v.indexOf(':'),k=v.slice(0,i),x=v.slice(i+1);
     if(k==='stat'||k==='ex')U[k]=U[k]===x?'all':x;else if(U.x[k]===x)delete U.x[k];else U.x[k]=x;U.page=0;render()},
   xclr:k=>{if(k==='stat'||k==='ex'||k==='range')U[k]='all';else delete U.x[k];U.page=0;render()},
@@ -1162,16 +1165,25 @@ addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.isx
 /* ---------- today at a glance (shared hero, timeline and motion from ui.js) ---------- */
 function heroToday(){
   if(!S.log.length)return '';
-  const day=ms=>ymd(new Date(ms)),t=day(Date.now()),T=S.log.filter(e=>day(e.at)===t).sort((a,b)=>a.at-b.at),W=T.filter(e=>e.type!=='S');
-  const vol=W.filter(e=>e.type==='W').reduce((a,e)=>a+(+e.sets||0)*(+e.reps||0)*(+e.load||0),0),sets=W.reduce((a,e)=>a+(e.type==='C'?0:+e.sets||0),0);
-  const ws=wkStart(Date.now()),goal=S.goal||4,wk=new Set(S.log.filter(e=>e.type!=='S'&&e.at>=ws).map(e=>day(e.at))).size;
-  const cw=Math.round(S.log.filter(e=>e.type==='C'&&e.at>=ws).reduce((a,e)=>a+(+e.mins||0),0));
+  // each tile is the range filter's own slice of the log (all exercises, no card filters), so tapping one shows the same totals
+  const A=scored(),per=r=>{const E=A.filter(e=>inRange(e.day,r)),W=E.filter(e=>e.type!=='S'),L=W.filter(e=>e.type!=='C');
+    return{E,W,L,n:new Set(W.map(e=>e.day)).size,vol:E.reduce((a,e)=>a+e.vol,0),sets:L.reduce((a,e)=>a+(+e.sets||0),0),
+      cm:Math.round(W.filter(e=>e.type==='C').reduce((a,e)=>a+(+e.mins||0),0)),cd:W.filter(e=>e.type==='C').reduce((a,e)=>a+(+e.dist||0),0),prs:E.filter(e=>e.pr).length}};
+  const td=per('today'),wk=per('week'),mo=per('month'),goal=S.goal||4,str=td.E.length>td.W.length;
+  // a day off once the weekly goal is hit is a planned rest day, as on TODAY
+  const rest=!td.W.length&&wk.n>=goal,pl=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
+  const k=v=>v>=1e4?(v/1e3).toFixed(v>=1e5?0:1)+'k':n0(v);   // compact volume so three tiles fit across a phone
+  const vs=x=>x.vol?`${k(x.vol)} ${S.wu}`:x.cm?`${x.cm} min cardio`:'';
+  const tile=(r,label,value,tone,sub)=>({label,value,tone,sub,attrs:{'data-a':'rng','data-v':r,'aria-label':`${label}: ${value}, ${sub}. Show ${RANGES[r].toLowerCase()} below`},on:U.range===r});
+  const tv=td.L.length?(td.vol?`${k(td.vol)} ${S.wu}`:pl(td.sets,'set')):td.cm?`${td.cm} min`:'—';
+  const ts=td.L.length?`${pl(td.L.length,'exercise')} · ${pl(td.sets,'set')}`:td.W.length?`cardio${td.cd?` · ${n1(td.cd)} ${S.du}`:''}`:(str?'stretched · ':'')+(rest?'rest day':'not yet');
   const what=e=>e.type==='C'?`${e.mins?Math.round(e.mins)+' min':''}${e.dist?` · ${n1(e.dist)} ${S.du}`:''}`:e.type==='S'?`${e.sets}×${e.reps}s hold`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:''}`;
-  return UI.hero({key:'train',title:'Today',sub:W.length?`${W.length} exercise${W.length>1?'s':''} · ${sets} sets`:T.length?'Stretched today':'No workout yet today',
-    big:{value:`${n0(vol)}`,label:`${S.wu} lifted today`,tone:W.length?'pos':''},   // green once you've trained today
-    rings:[{key:'today',label:'Today',value:W.length?1:0,max:1,display:W.length?'trained':'not yet'},{key:'week',label:'Week',value:wk,max:goal,display:`${wk}/${goal}`},{key:'cardio',label:'Cardio',value:cw,max:150,display:`${cw}/150 min`}],
+  return UI.hero({key:'train',title:'Today',sub:td.W.length?'Workout done ✓':rest?'Rest day · weekly goal hit':str?'Stretched · no workout yet':'No workout yet today',
+    stats:[tile('today','Today',tv,td.W.length?'pos':'',ts),   // green once you've trained today
+      tile('week','Week',`${wk.n} / ${goal}`,wk.n>=goal?'pos':'',vs(wk)||'no workouts yet'),
+      tile('month','Month',`${mo.n}`,'',[vs(mo),mo.prs?pl(mo.prs,'PR'):''].filter(Boolean).join(' · ')||'no workouts yet')],
     action:{label:'▶ Start workout',attrs:{'data-a':'go'}},
-    log:T.map(e=>({at:e.at,tag:e.ex,text:what(e),tone:e.type==='S'?'':'pos'}))});
+    log:td.E.slice().sort((a,b)=>a.at-b.at).map(e=>({at:e.at,tag:e.ex,text:what(e),tone:e.type==='S'?'':'pos'}))});
 }
 {const r0=render;render=function(...a){r0.apply(this,a);UI.animate($('#app'));UI.animate($('#top'),{onDone:l=>toast(`${l.join(' + ')} goal met ✓`)})};UI.animate($('#top'));UI.animate($('#app'))}
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
