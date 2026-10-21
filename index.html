@@ -380,7 +380,7 @@ function load(){
   try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.log))return {...d,...s,notes:s.notes||{}}}catch(e){}
   return d;
 }
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Storage write failed — take a backup')}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Storage write failed — take a backup')}UI.replan()}
 function setMonth(ms){const d=new Date(ms);U.month={y:d.getFullYear(),m:d.getMonth()}}
 let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3200)}
 
@@ -812,6 +812,19 @@ function plan(D){
   const P=[],has=x=>P.some(p=>exk(p.ex)===exk(x));
   SLOTS[D].forEach(([n,L,k=1],s)=>rot(L).filter(x=>!has(x)).slice(0,k).forEach(ex=>P.push({ex,s})));
   return P;
+}
+// TODAY's plan card shows the workout START would generate (nextDay + plan), so the two always agree.
+// Names go in one line of at most 64 characters: up to three, then "+ N more".
+function brief(L,pre=''){
+  const s=k=>pre+L.slice(0,k).join(' · ')+(L.length>k?` + ${L.length-k} more`:'');let k=Math.min(3,L.length);
+  while(k>1&&s(k).length>64)k--;const t=s(k);return t.length>64?t.slice(0,63)+'…':t;
+}
+function planRows(){
+  const nx=nextDay(),td=ymd(new Date());
+  // trained today: the row stays on today's session, ticked, with what was logged; it opens today's entries
+  if(nx.on===td)return [{title:`${DN(nx.after)} day`,sub:brief([...new Set(S.log.filter(e=>ymd(new Date(e.at))===td).sort((a,b)=>a.at-b.at).map(e=>e.ex))]),act:'today',done:true}];
+  const pl=plan(nx.day);
+  return [{title:`${DN(nx.day)} day`,sub:pl.length?brief(pl.map(p=>p.ex),S.log.length?'':'First session · '):'Nothing left to pick · restore a skipped exercise',act:'go'}];
 }
 
 function startForm(){
@@ -1249,9 +1262,10 @@ $('#file').addEventListener('change',async e=>{
 
 function boot(){setMonth(S.log.length?Math.max(...S.log.map(t=>t.at)):Date.now());render()}
 boot();
+UI.planner('training',[KEY],planRows);
 if(R)draw();
 // an entry logged from another app (REWIRE) lands in storage while this page is open: pick it up instead of overwriting it
-addEventListener('storage',e=>{if(e.key===KEY){S=load();render()}else if(e.key==='isx.checkin.v1')render()});
+addEventListener('storage',e=>{if(e.key===KEY){S=load();render();UI.replan()}else if(e.key==='isx.checkin.v1')render()});
 // another ISIONXXX app can send you straight to an action here (REWIRE's LOG buttons): #do=<action> or a message
 // 'today' (from TODAY's rings and timeline): drop any card filters and show just today, as a chip you can clear
 function doAct(a){if(!/^\w+$/.test(a||''))return;if(a==='today'){U.x={};U.range=ymd(new Date());setMonth(Date.now());U.page=0;render();return}const b=document.querySelector(`[data-a="${a}"],[data-act="${a}"]`);if(b)b.click()}
