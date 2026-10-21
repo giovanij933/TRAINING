@@ -769,7 +769,9 @@ const item=ex=>({ex,type:xtype(ex)||'W',sets:[],t0:null,acc:0,dist:'',at:null});
 const DN=d=>d==='STRETCH'?'MOBILITY':d;
 // today's workout is generated: PUSH > PULL > LEGS > CARDIO > MOBILITY, one exercise per slot. A lifting day's main lift
 // alternates between two; every other slot (and the cooldown) rotates through its whole list, so each exercise comes
-// round before any repeats. Every LIB exercise sits in exactly one slot of its day. [label, list, how many]
+// round before any repeats. Every LIB exercise sits in exactly one slot of its day; Core (PULL's library) also closes
+// LEGS day, and since rotation follows the log, the two days share one core rotation. [label, list, how many]
+const CORE=['Hanging Leg Raise','Cable Crunch','Toes-to-Bar','Ab Wheel Rollout','Pallof Press','Dead Bug','Hanging Knee Raise','Cable Woodchop','Reverse Crunch','Landmine Rotation','Bicycle Crunch','Weighted Decline Sit-up','V-Up'];
 const SLOTS={
   PUSH:[['Main lift',['Bench Press','Incline Bench Press']],
     ['Chest press',['Dumbbell Bench Press','Incline Dumbbell Press','Close-Grip Bench Press','Push-up','Diamond Push-up']],
@@ -780,11 +782,11 @@ const SLOTS={
     ['Row',['Pendlay Row','Dumbbell Row','Seated Cable Row','Chest-Supported Row','T-Bar Row','Inverted Row']],
     ['Vertical pull',['Pull-up','Chin-up','Lat Pulldown','Straight-Arm Pulldown']],
     ['Rear delts · traps',['Face Pull','Rear Delt Fly','Shrug','Rack Pull']],
-    ['Biceps',['Barbell Curl','Dumbbell Curl','Hammer Curl','Preacher Curl','Cable Curl']],['Core',['Hanging Leg Raise','Cable Crunch','Toes-to-Bar','Ab Wheel Rollout','Pallof Press','Dead Bug','Hanging Knee Raise','Cable Woodchop','Reverse Crunch','Landmine Rotation','Bicycle Crunch','Weighted Decline Sit-up','V-Up']],['Cooldown',LIB.PULL.S,2]],
+    ['Biceps',['Barbell Curl','Dumbbell Curl','Hammer Curl','Preacher Curl','Cable Curl']],['Core',CORE],['Cooldown',LIB.PULL.S,2]],
   LEGS:[['Main lift',['Back Squat','Front Squat']],['Squat',['Hack Squat','Leg Press','Goblet Squat','Pistol Squat']],
     ['Hinge',['Romanian Deadlift','Good Morning','Hip Thrust','Glute Bridge','Nordic Curl']],
     ['Single leg',['Bulgarian Split Squat','Walking Lunge','Step-up','Jump Squat']],
-    ['Isolation',['Leg Extension','Leg Curl','Seated Leg Curl','Adductor Machine']],['Calves',['Standing Calf Raise','Seated Calf Raise']],['Cooldown',LIB.LEGS.S,2]],
+    ['Isolation',['Leg Extension','Leg Curl','Seated Leg Curl','Adductor Machine']],['Calves',['Standing Calf Raise','Seated Calf Raise']],['Core',CORE],['Cooldown',LIB.LEGS.S,2]],
   CARDIO:[['Cardio',LIB.CARDIO.C],['Stretch',LIB.CARDIO.S,2]],
   STRETCH:Object.entries(STRETCHES)
 };
