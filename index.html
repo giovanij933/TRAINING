@@ -260,7 +260,7 @@ h1.brand{margin:0}
   </div>
 </header>
 <div id="top"></div>
-<div class="bar">
+<div class="bar" role="region" aria-label="Filters">
   <select data-f="ex" aria-label="Exercise"></select>
   <select data-f="stat" aria-label="Outcome">
     <option value="all">All results</option><option value="up">Progressed</option><option value="hold">Held</option><option value="down">Regressed</option>
@@ -343,7 +343,11 @@ const ALIAS={
 const $=s=>document.querySelector(s), dlg=$('#dlg');
 // session screens (start, live, done) open as a full-screen sheet; other dialogs keep the usual box
 const sheet=()=>dlg.classList.add('ss');
-dlg.addEventListener('close',()=>dlg.classList.remove('ss'));
+// focus goes back to what opened the dialog, but a save redraws it (a log row's EDIT, the Today card's START): then its
+// new copy, else START, instead of the top of the page
+let opener=null;
+dlg.addEventListener('close',()=>{dlg.classList.remove('ss');const o=opener;opener=null;setTimeout(()=>{if(dlg.open||document.activeElement&&document.activeElement!==document.body)return;
+  const a=o?.dataset.a,v=o?.dataset.v,t=a&&document.querySelector(`[data-a="${a}"]${v?`[data-v="${CSS.escape(v)}"]`:''}`);(t?.offsetParent?t:$('[data-a=go]')).focus({preventScroll:true})})});
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -363,8 +367,10 @@ const cls=v=>v>0?'pos':v<0?'neg':'dim';
 const dur=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}h ${m}m`:m?`${m}m ${x}s`:`${x}s`};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const exk=s=>String(s).trim().toLowerCase();
-// minutes from "27:30", "1:02:15" or "27.5"; and back to m:ss
-const pm=s=>{s=String(s??'').trim();if(!s)return 0;if(s.includes(':')){const p=s.split(':').map(Number);return (p.length>2?p[0]*60+p[1]+p[2]/60:p[0]+p[1]/60)||0}return parseFloat(s)||0};
+// minutes from "27:30", "1:02:15", "27.5" or "27,5" (a decimal comma); and back to m:ss
+const pm=s=>{s=String(s??'').trim().replace(',','.');if(!s)return 0;if(s.includes(':')){const p=s.split(':').map(Number);return (p.length>2?p[0]*60+p[1]+p[2]/60:p[0]+p[1]/60)||0}return parseFloat(s)||0};
+// a typed decimal ("62,5" from a comma region's decimal pad, as TODAY's weight field takes it); NaN when it isn't a number
+const dn=s=>{s=String(s??'').trim().replace(',','.');return s===''?0:+s};
 const fm=m=>{const t=Math.round(m*60);return `${Math.floor(t/60)}:${pad(t%60)}`};
 // performance, the number progress is judged on:
 //   weighted -> estimated 1RM (Epley) · bodyweight -> reps per set · cardio -> speed
@@ -373,12 +379,20 @@ const vol=e=>e.type==='W'?e.sets*e.reps*e.load:0;
 const perfT=e=>{const p=perf(e);return e.type==='C'?`${p.toFixed(2)} ${S.du}/h`:e.type==='B'?`${p} reps`:e.type==='S'?`${p}s hold`:`${n1(p)} ${S.wu}`};
 
 /* ---------- state ---------- */
-let S=load();
+let S=load(),RD='';   // RD: the day the dashboard was last drawn for
 const U={ex:'all',stat:'all',range:'all',page:0,month:null,x:{}};   // x: cross-filters set by clicking a card (grp, week)
 function load(){
   const us=/-US$/.test(navigator.language||''),d={log:[],notes:{},wu:us?'lb':'kg',du:us?'mi':'km',goal:4};
-  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.log))return {...d,...s,notes:s.notes||{}}}catch(e){}
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.log))return fix(s,d)}catch(e){}
   return d;
+}
+// a bad file, another app or an old version can leave rows or settings malformed: drop those rows, make numbers numbers
+// and fall back to the defaults, so one bad value can't stop the app from starting
+function fix(s,d){
+  const log=s.log.filter(e=>e&&typeof e.ex==='string'&&e.ex.trim()&&/^[WBCS]$/.test(e.type)&&typeof e.at==='number'&&isFinite(e.at))
+    .map(e=>({...e,id:e.id==null?uid():e.id,sets:+e.sets||0,reps:+e.reps||0,load:+e.load||0,dist:+e.dist||0,mins:+e.mins||0,rpe:e.rpe==null||e.rpe===''||!isFinite(e.rpe)?null:+e.rpe,note:typeof e.note==='string'?e.note:''}));
+  return {...d,...s,log,notes:s.notes&&typeof s.notes==='object'&&!Array.isArray(s.notes)?s.notes:{},skip:Array.isArray(s.skip)?s.skip.filter(x=>typeof x==='string'):[],
+    wu:s.wu==='kg'||s.wu==='lb'?s.wu:d.wu,du:s.du==='km'||s.du==='mi'?s.du:d.du,goal:+s.goal>0?+s.goal:d.goal};
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Storage write failed — take a backup')}UI.replan()}
 function setMonth(ms){const d=new Date(ms);U.month={y:d.getFullYear(),m:d.getMonth()}}
@@ -456,7 +470,7 @@ function gauge(segs,label){
 }
 /* bodyweight and recovery, from ISIONXXX's morning check-in (logged on TODAY; read-only here) */
 const CQ=['','Poor','Restless','OK','Good','Great'],CE=['','Drained','Low','Steady','Good','Charged'];
-function checkins(){let L=[];try{L=JSON.parse(localStorage.getItem('isx.checkin.v1'))?.log}catch(e){}return Array.isArray(L)?L.slice().sort((a,b)=>a.day<b.day?-1:1):[]}
+function checkins(){let L=[];try{L=JSON.parse(localStorage.getItem('isx.checkin.v1'))?.log}catch(e){}return Array.isArray(L)?L.filter(e=>typeof e?.day==='string').sort((a,b)=>a.day<b.day?-1:1):[]}   // a bad row is skipped, not fatal
 // a plain readiness call from sleep and energy, like the readiness scores in recovery apps
 const rdy=c=>!c?['Check in on TODAY',0]:c.energy<=2||c.sleep<6?['Go lighter today',-1]:c.energy>=4&&c.sleep>=7?['Good day to push',1]:['Train as planned',0];
 const toWU=(w,u)=>!(w>0)?null:!u||u===S.wu?w:S.wu==='kg'?w/2.20462:w*2.20462;
@@ -574,11 +588,13 @@ const GROUP={};for(const d of ['PUSH','PULL','LEGS'])for(const t of ['W','B'])(L
 const grp=e=>e.type==='C'?'CARDIO':e.type==='S'?'MOBILITY':GROUP[exk(e.ex)]||'OTHER';
 const wkStart=ms=>{const d=new Date(ms);d.setHours(0,0,0,0);d.setDate(d.getDate()-(d.getDay()+6)%7);return d.getTime()};
 function train(T,all=view(false)){
-  const w0=wkStart(Date.now()),W=864e5*7;
-  const wk=i=>all.filter(e=>e.at>=w0-i*W&&e.at<w0-(i-1)*W);
-  const days=a=>new Set(a.map(e=>e.day)).size,volOf=a=>a.reduce((s,e)=>s+e.vol,0);
+  // each week runs from its own Monday's midnight (a fixed 7 × 24 h drifts an hour across a DST change)
+  const w0=wkStart(Date.now()),wb=i=>{const d=new Date(w0);d.setDate(d.getDate()-7*i);return d.getTime()};
+  const wk=i=>{const a=wb(i),b=wb(i-1);return all.filter(e=>e.at>=a&&e.at<b)};
+  // a workout day has something besides stretches, as the Today card and TODAY's ring count it
+  const days=a=>new Set(a.filter(e=>e.type!=='S').map(e=>e.day)).size,volOf=a=>a.reduce((s,e)=>s+e.vol,0);
   const weeks=[...Array(8)].map((_,i)=>wk(7-i)),thisWk=weeks[7],lastWk=weeks[6];
-  let streak=0;for(let i=thisWk.length?0:1;i<52;i++){if(!wk(i).length)break;streak++}
+  let streak=0;for(let i=days(thisWk)?0:1;i<52;i++){if(!days(wk(i)))break;streak++}
   const G={};T.forEach(e=>{const g=grp(e),x=G[g]??={sets:0,n:0};x.sets+=e.type==='C'?1:e.sets;x.n++});
   const C=T.filter(e=>e.type==='C'),cm=C.reduce((s,e)=>s+e.mins,0),cd=C.reduce((s,e)=>s+e.dist,0);
   // main lift: the filtered exercise, else the weighted lift trained most
@@ -609,7 +625,7 @@ function xfBar(names){
 const pace=v=>v==null?'—':`${fm(v)} /${S.du}`;
 
 function render(){
-  const names={};S.log.forEach(e=>{names[exk(e.ex)]??=e.ex.trim()});
+  RD=ymd(new Date());const names={};S.log.forEach(e=>{names[exk(e.ex)]??=e.ex.trim()});
   if(U.ex!=='all'&&!(U.ex in names))U.ex='all';
   const T=view(),s=stats(T),t=train(T),n=s.n,nd=s.dk.length;
   // a card that sets a filter leaves that filter out: Personal records the result, Training split the group, the week cards the week
@@ -680,8 +696,8 @@ function entryForm(t){
    <label>RPE (1–10)<input name="rpe" type="number" min="1" max="10" step="0.5" value="${d.rpe??''}"></label>
    <label data-t="WBS"><span id="lsets">Sets</span><input name="sets" type="number" min="1" step="1" value="${d.sets||''}"></label>
    <label data-t="WBS"><span id="lreps">Reps per set</span><input name="reps" type="number" min="1" step="1" value="${d.reps||''}"></label>
-   <label data-t="W">Load (${S.wu})<input name="load" type="number" min="0" step="any" value="${d.type==='W'?d.load:''}"></label>
-   <label data-t="C">Distance (${S.du})<input name="dist" type="number" min="0" step="any" value="${d.dist||''}"></label>
+   <label data-t="W">Load (${S.wu})<input name="load" inputmode="decimal" autocomplete="off" value="${d.type==='W'?d.load:''}"></label>
+   <label data-t="C">Distance (${S.du})<input name="dist" inputmode="decimal" autocomplete="off" value="${d.dist||''}"></label>
    <label data-t="C">Time (mm:ss)<input name="mins" inputmode="numeric" placeholder="27:30" value="${d.mins?fm(d.mins):''}"></label>
   </div>
   <label>Note<textarea name="note" rows="3">${esc(d.note||'')}</textarea></label>
@@ -689,9 +705,9 @@ function entryForm(t){
   <div class="fa2"><span id="pv"></span><button type="button" data-a="x">CANCEL</button><button class="pri">SAVE</button></div></form>`;
   const f=$('#tf'),e=f.elements;
   const read=()=>{const ty=e.type.value,c=ty==='C';return {ex:e.ex.value.trim(),type:ty,at:new Date(e.when.value).getTime(),
-    sets:c?0:Math.round(+e.sets.value)||0,reps:c?0:Math.round(+e.reps.value)||0,load:ty==='W'?+e.load.value||0:0,
-    dist:c?+e.dist.value||0:0,mins:c?pm(e.mins.value):0,rpe:e.rpe.value===''?null:+e.rpe.value,note:e.note.value.trim()}};
-  const ok=v=>v.ex&&isFinite(v.at)&&(v.type==='C'?v.dist>0&&v.mins>0:v.sets>0&&v.reps>0&&(v.type!=='W'||e.load.value!==''));
+    sets:c?0:Math.round(+e.sets.value)||0,reps:c?0:Math.round(+e.reps.value)||0,load:ty==='W'?dn(e.load.value):0,
+    dist:c?dn(e.dist.value):0,mins:c?pm(e.mins.value):0,rpe:e.rpe.value===''?null:+e.rpe.value,note:e.note.value.trim()}};
+  const ok=v=>v.ex&&isFinite(v.at)&&(v.type==='C'?v.dist>0&&v.mins>0:v.sets>0&&v.reps>0&&(v.type!=='W'||e.load.value.trim()!==''&&v.load>=0));
   const sync=ev=>{
     // new entry + known exercise: start from what you did last time
     if(!t&&ev&&ev.target.name==='ex'){
@@ -724,6 +740,8 @@ function entryForm(t){
 const DAYS=['PUSH','PULL','LEGS','CARDIO','STRETCH'],PPL=DAYS.slice(0,3),RESTS=[60,90,120,180],HOLDS=[20,30,45,60];
 let R=null,RI=0,RA=0,WL=null,AC=null;
 try{R=JSON.parse(localStorage.getItem(RUN))}catch(e){}
+// a saved workout that isn't one (corrupted, or from an old version) is dropped instead of breaking the start
+if(!(Array.isArray(R?.list)&&R.list.length&&R.list.every(x=>typeof x?.ex==='string'&&Array.isArray(x.sets))))R=null;else R.cur=Math.min(R.list.length-1,Math.max(0,R.cur|0));
 const keepRun=()=>{try{localStorage.setItem(RUN,JSON.stringify(R))}catch(e){}};
 const pref=()=>{try{return JSON.parse(localStorage.getItem(RUN+'.pref'))||{}}catch(e){return {}}};
 const setPref=p=>{try{localStorage.setItem(RUN+'.pref',JSON.stringify({...pref(),...p}))}catch(e){}};
@@ -738,7 +756,9 @@ function chime(){
   }catch(e){}
 }
 async function wake(on){try{if(on&&!WL){WL=await navigator.wakeLock?.request('screen');WL?.addEventListener('release',()=>WL=null)}else if(!on&&WL){WL.release();WL=null}}catch(e){}}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&R)wake(true)});
+// a phone keeps the app in memory overnight (and a desktop tab stays open): a new day redraws today, the week and the goal
+const roll=()=>{if(RD!==ymd(new Date()))render()};setInterval(roll,6e4);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(R)wake(true);roll()});
 // where the bubble is at ms into the rest: cue, seconds left in the phase, scale (.45 empty – 1 full)
 function breath(ms){
   const P=PACE[R.pat]||PACE['Calm 4-6'];let x=ms/1000%P.reduce((a,p)=>a+p[1],0),s=.45;
@@ -798,12 +818,15 @@ function rot(L){
 }
 // the next day is the one after the last session's: the latest logged day that places in the cycle (its lifting group,
 // else cardio, else a stretch-only day = MOBILITY; cardio plus a full set of holds counts as having reached MOBILITY).
-// Nothing logged starts at PUSH; missed calendar days don't matter.
+// A full set is more stretches than a cooldown's two: a rest day with a stretch or two, or a late workout's cooldown
+// logged past midnight, doesn't place (it would send the cycle back to PUSH). Nothing logged starts at PUSH; missed
+// calendar days don't matter.
 function nextDay(L=S.log){
   const by={};L.forEach(e=>(by[ymd(new Date(e.at))]??=[]).push(e));
   for(const d of Object.keys(by).sort().reverse()){
-    const c={};by[d].forEach(e=>{const g=grp(e),x=c[g]??=[0,0];x[0]++;x[1]=Math.max(x[1],e.at)});
-    const g=PPL.filter(g=>c[g]).sort((a,b)=>c[b][0]-c[a][0]||c[b][1]-c[a][1])[0]||(c.CARDIO?(c.MOBILITY?.[0]>SLOTS.CARDIO[1][2]?'STRETCH':'CARDIO'):c.MOBILITY&&!c.OTHER?'STRETCH':null);
+    // distinct exercises per group, not entries: a stretch held 28 s then 31 s (or a top set plus back-offs) is two entries
+    const c={};by[d].forEach(e=>{const g=grp(e),x=c[g]??=[new Set(),0];x[0].add(exk(e.ex));x[1]=Math.max(x[1],e.at)});
+    const g=PPL.filter(g=>c[g]).sort((a,b)=>c[b][0].size-c[a][0].size||c[b][1]-c[a][1])[0]||(c.CARDIO?(c.MOBILITY?.[0].size>SLOTS.CARDIO[1][2]?'STRETCH':'CARDIO'):c.MOBILITY?.[0].size>SLOTS.CARDIO[1][2]&&!c.OTHER?'STRETCH':null);
     if(g)return {day:DAYS[(DAYS.indexOf(g)+1)%DAYS.length],after:g,on:d};
   }
   return {day:'PUSH'};
@@ -915,7 +938,7 @@ function workView(){
    <datalist id="exs">${[...new Set([...S.log.map(e=>e.ex.trim()),...PRESET])].map(a=>`<option value="${esc(a)}">`).join('')}</datalist></div>
   <p class="h">${esc(x.ex)}</p><p class="dim">${lastTxt(x.ex)}</p>
   ${C?`<div class="bigclk" id="cc"></div>
-  <div class="fgrid"><label>Distance (${S.du})<input id="cd" type="number" min="0" step="any" value="${x.dist}"></label><button type="button" class="${x.t0?'':'pri'}" id="cs" style="align-self:end">${x.t0?'PAUSE':cms(x)?'RESUME':'START'}</button></div>`
+  <div class="fgrid"><label>Distance (${S.du})<input id="cd" inputmode="decimal" autocomplete="off" value="${esc(x.dist)}"></label><button type="button" class="${x.t0?'':'pri'}" id="cs" style="align-self:end">${x.t0?'PAUSE':cms(x)?'RESUME':'START'}</button></div>`
   :H?`<ol class="sets">${x.sets.map((s,j)=>`<li>${s.reps}s hold <button type="button" data-s="${j}" aria-label="Remove hold">X</button></li>`).join('')}</ol>
   <p class="k">Hold (seconds)</p>
   <div class="chips" id="hc">${HOLDS.map(h=>`<button type="button" data-h="${h}"${h===ns.reps?' class="on"':''}>${h}</button>`).join('')}<input id="ih" type="number" inputmode="numeric" min="5" step="5" value="${ns.reps}" aria-label="Seconds"></div>
@@ -923,7 +946,7 @@ function workView(){
   <p class="dim" style="margin-top:8px">Each side counts as one hold. Ease into mild tension and breathe; never stretch into pain. <button type="button" class="lnk" id="hl">Log without timer</button></p>`
   :`<ol class="sets">${x.sets.map((s,j)=>`<li>${s.reps} ${x.type==='W'?`× ${n1(s.load)}${unit(x)}`:'reps'} <button type="button" data-s="${j}" aria-label="Remove set">X</button></li>`).join('')}</ol>
   <div class="fgrid"><label>Reps<input id="ir" type="number" inputmode="numeric" min="1" step="1" value="${ns.reps||''}"></label>
-   ${x.type==='W'?`<label>Load (${S.wu})<input id="il" type="number" inputmode="decimal" min="0" step="any" value="${ns.load??''}"></label>`:''}</div>
+   ${x.type==='W'?`<label>Load (${S.wu})<input id="il" inputmode="decimal" autocomplete="off" value="${ns.load??''}"></label>`:''}</div>
   <button type="button" class="pri" id="ls" style="width:100%">LOG SET ${x.sets.length+1} · REST ${fm(R.restSec/60)}</button>`}
   <div class="fa2"><button type="button" class="ghost" id="rd">DISCARD</button>${R.cur<R.list.length-1?'<button type="button" id="nx">NEXT &gt;</button>':''}<button type="button" class="pri" id="fn">FINISH</button></div></div>`;
   const tick=()=>{$('#wt').textContent='· '+fm((Date.now()-R.start)/60000);if(C)$('#cc').textContent=fm(cms(x)/60000)};
@@ -942,8 +965,8 @@ function workView(){
     $('#cd').oninput=e=>{x.dist=e.target.value;keepRun()};
     $('#cs').onclick=()=>{if(x.t0){x.acc+=Date.now()-x.t0;x.t0=null}else{x.t0=Date.now();x.at??=x.t0}keepRun();draw()};
   }else $('#ls').onclick=()=>{
-    const reps=Math.round(+$('#ir').value),load=x.type==='W'?+$('#il').value:0;
-    if(!(reps>0)||(x.type==='W'&&$('#il').value===''))return toast('Enter reps'+(x.type==='W'?' and load':''));
+    const reps=Math.round(+$('#ir').value),load=x.type==='W'?dn($('#il').value):0;
+    if(!(reps>0)||(x.type==='W'&&($('#il').value===''||!(load>=0))))return toast('Enter reps'+(x.type==='W'?' and load':''));
     x.sets.push({reps,load,at:Date.now()});R.rest={t0:Date.now(),len:R.restSec};keepRun();draw();
   };
   $('#nx')&&($('#nx').onclick=()=>{R.cur++;keepRun();draw()});
@@ -996,7 +1019,7 @@ function holdView(){
 function entries(){
   const out=[];
   R.list.forEach(x=>{
-    if(x.type==='C'){const m=cms(x)/60000;if(m>0)out.push({ex:x.ex,type:'C',at:x.at,sets:0,reps:0,load:0,dist:+x.dist||0,mins:r2(m)});return}
+    if(x.type==='C'){const m=cms(x)/60000;if(m>0)out.push({ex:x.ex,type:'C',at:x.at,sets:0,reps:0,load:0,dist:Math.abs(dn(x.dist))||0,mins:r2(m)});return}
     x.sets.forEach(s=>{const p=out[out.length-1];
       if(p&&p.ex===x.ex&&p.reps===s.reps&&p.load===s.load)p.sets++;
       else out.push({ex:x.ex,type:x.type,at:s.at,sets:1,reps:s.reps,load:s.load,dist:0,mins:0})});
@@ -1045,6 +1068,8 @@ function importCSV(txt){
   for(const k in ALIAS)c[k]=H.findIndex(h=>ALIAS[k].includes(h));
   const miss=[['at','date'],['ex','exercise']].filter(([k])=>c[k]<0).map(x=>x[1]);
   if(miss.length)return toast('Missing column: '+miss.join(', '));
+  // a weight column that names its unit (Strong's "Weight (kg)") is converted into the log's unit
+  const lu=(/\((kg|lb)s?\)/.exec(H[c.load]||'')||[])[1],lf=lu&&lu!==S.wu?(lu==='kg'?2.20462262:1/2.20462262):0;
   // duplicates are checked against what was already here, so identical sets inside one file all import
   const key=t=>[t.at,exk(t.ex),t.type,t.sets,t.reps,t.load,t.dist,r2(t.mins)].join('|'),seen=new Set(S.log.map(key));
   let add=0,skip=0,last=0;
@@ -1054,7 +1079,7 @@ function importCSV(txt){
     if(!isFinite(at)||!ex){skip++;return}
     const dist=nn('dist'),load=nn('load'),ty=g('type').charAt(0).toUpperCase(),rp=num(g('rpe'));
     const type=ty&&'WBCS'.includes(ty)?ty:dist>0?'C':load>0?'W':'B',cd=type==='C';
-    const t={id:uid(),at,ex,type,sets:cd?0:Math.round(nn('sets'))||1,reps:cd?0:Math.round(nn('reps')),load:type==='W'?load:0,
+    const t={id:uid(),at,ex,type,sets:cd?0:Math.round(nn('sets'))||1,reps:cd?0:Math.round(nn('reps')),load:type==='W'?(lf?r2(load*lf):load):0,
       dist:cd?dist:0,mins:cd?pm(g('mins')):0,rpe:isFinite(rp)?rp:null,note:g('note')};
     if((cd?!(t.dist>0&&t.mins>0):!t.reps)||seen.has(key(t))){skip++;return}
     S.log.push(t);add++;last=Math.max(last,at);
@@ -1148,8 +1173,10 @@ function review(day){
   let c1=lk?`My last ${esc(me.t)} was ${dl(lk)}, ${pl(gap(lk,day),'day')} earlier.`:`This was my first ${esc(me.t)}${U.ex==='all'?'':' with this exercise'}, so there's nothing like it to compare with yet.`;
   if(vsL!=null)c1+=` I did ${fk(me[key])}${key==='vol'?' of volume':''}, ${Math.abs(vsL)<.5?'about the same as':chg(vsL)+' vs'} the ${fk(last[key])} of that session.`;
   if(P.length>1&&vsA!=null)c1+=` My average over the last ${pl(P.length,'such session')} is ${fk(av)}, so this was ${vsA>=10?'<b>above</b> average':vsA<=-10?'<b>below</b> average':'about average'}.`;
-  const WK=new Set(DA.map(k=>wkStart(pd(k).getTime()))),w0=wkStart(pd(day).getTime()),goal=S.goal||4;
-  const wk=DA.filter(k=>k<=day&&wkStart(pd(k).getTime())===w0).length;let st=0;for(let w=w0;WK.has(w);w=wkStart(w-3*864e5))st++;
+  // the weekly goal counts workout days (something besides stretches), as everywhere else
+  const DW=[...new Set(S.log.filter(e=>e.type!=='S').map(e=>ymd(new Date(e.at))))];
+  const WK=new Set(DW.map(k=>wkStart(pd(k).getTime()))),w0=wkStart(pd(day).getTime()),goal=S.goal||4;
+  const wk=DW.filter(k=>k<=day&&wkStart(pd(k).getTime())===w0).length;let st=0;for(let w=w0;WK.has(w);w=wkStart(w-3*864e5))st++;
   const c2=`By the end of the day I had <b class="${wk>=goal?'pos':''}">${pl(wk,'workout')}</b> in for the week against a goal of ${goal}${wk>=goal?', so the goal was met':''}.${st>=2?` That makes ${st} weeks in a row with training.`:''}`;
   out+=sec('In context',`<p>${c1}</p><p>${c2}</p>`);
   // each exercise in order: what you did, effort, change versus last time, PR and note
@@ -1166,7 +1193,7 @@ function review(day){
   if(PR.length)good.push(`${PR.length===1?'A new personal best':'New personal bests'} on ${nm(PR)}.`);
   if(up.length)good.push(`Up on last time: ${list(up.map(e=>`${esc(e.ex)} (${chg(e.d)})`))}.`);
   if(!dn.length&&T.some(e=>e.d!=null))good.push('Nothing went backwards against last time.');
-  if(wk===goal)good.push(`This session hit my weekly goal of ${pl(goal,'workout')}.`);else if(wk>goal)good.push(`I was past my weekly goal: ${wk} workouts against ${goal}.`);
+  if(wk===goal&&DW.includes(day))good.push(`This session hit my weekly goal of ${pl(goal,'workout')}.`);else if(wk>goal)good.push(`I was past my weekly goal: ${wk} workouts against ${goal}.`);
   if(R.length>=3&&rmax-rmin<=1&&rmax<9)good.push(rmin===rmax?`Effort was steady: every rated set was RPE ${rmin}.`:`Effort was steady: RPE stayed between ${rmin} and ${rmax}.`);
   if(dn.length)look.push(`Down on last time: ${list(dn.map(e=>`${esc(e.ex)} (${chg(e.d)})`))}.`);
   if(hi)look.push(`${hs===rs?`All ${rs}`:`${hs} of ${rs}`} rated sets were at RPE 9 or higher: close to failure for most of the session.`);
@@ -1244,13 +1271,16 @@ const ACT={
   pp:()=>{U.page--;render()},pn:()=>{U.page++;render()}
 };
 function shift(k){const d=new Date(U.month.y,U.month.m+k,1);U.month={y:d.getFullYear(),m:d.getMonth()};render()}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&ACT[b.dataset.a])ACT[b.dataset.a](b.dataset.v)});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&ACT[b.dataset.a]){if(!dlg.open)opener=b;ACT[b.dataset.a](b.dataset.v)}});
 // rows that act as buttons (cross-filters) answer Enter and Space too, and keep focus after the redraw
 document.addEventListener('keydown',e=>{const b=e.target.closest('[role=button][data-a]');if(!b||(e.key!=='Enter'&&e.key!==' '))return;e.preventDefault();
   const sel=`[data-a="${b.dataset.a}"][data-v="${CSS.escape(b.dataset.v||'')}"]`,i=[...document.querySelectorAll(sel)].indexOf(b);b.click();document.querySelectorAll(sel)[i]?.focus()});
 document.addEventListener('change',e=>{
   const k=e.target.dataset.f;if(!k)return;
-  if(k==='wu'||k==='du'){S[k]=e.target.value;save()}else if(k==='goal'){S.goal=+e.target.value;save()}else U[k]=e.target.value;
+  // the log keeps numbers in the chosen units (REWIRE writes, and TODAY and NUTRITION read, them that way): a switch converts them
+  if(k==='wu'||k==='du'){const v=e.target.value,f={kg:1/2.20462262,lb:2.20462262,km:1.609344,mi:1/1.609344}[v],[T,w]=k==='wu'?['W','load']:['C','dist'];
+    if(v!==S[k])S.log.forEach(x=>{if(x.type===T&&x[w])x[w]=r2(x[w]*f)});S[k]=v;save()}
+  else if(k==='goal'){S.goal=+e.target.value;save()}else U[k]=e.target.value;
   U.page=0;render();
 });
 $('#file').addEventListener('change',async e=>{
@@ -1258,9 +1288,11 @@ $('#file').addEventListener('change',async e=>{
   const txt=await f.text();
   if(!/\.json$/i.test(f.name))return importCSV(txt);
   try{
-    const s=JSON.parse(txt);if(!Array.isArray(s.log))throw 0;
-    if(!confirm(`Replace everything here with this backup (${s.log.length} entries)?`))return;
-    S={...S,...s,notes:s.notes||{}};save();boot();toast('Backup restored');
+    const s=JSON.parse(txt);if(!Array.isArray(s?.log))throw 0;
+    // another app's backup (or a broken one) has no training rows in it: refuse it before anything is replaced
+    const N=fix(s,S),bad=s.log.length-N.log.length;if(bad&&!N.log.length)throw 0;
+    if(!confirm(`Replace everything here with this backup (${N.log.length} entries${bad?`; ${bad} unreadable rows left out`:''})?`))return;
+    S=N;save();boot();toast('Backup restored');
   }catch(x){toast('Not a valid backup file')}
 });
 
@@ -1272,7 +1304,8 @@ if(R)draw();
 addEventListener('storage',e=>{if(e.key===KEY){S=load();render();UI.replan()}else if(e.key==='isx.checkin.v1')render()});
 // another ISIONXXX app can send you straight to an action here (REWIRE's LOG buttons): #do=<action> or a message
 // 'today' (from TODAY's rings and timeline): drop any card filters and show just today, as a chip you can clear
-function doAct(a){if(!/^\w+$/.test(a||''))return;if(a==='today'){U.x={};U.range=ymd(new Date());setMonth(Date.now());U.page=0;render();return}const b=document.querySelector(`[data-a="${a}"],[data-act="${a}"]`);if(b)b.click()}
+// a workout in progress stays on screen: any other action would replace its sheet while its timers kept running
+function doAct(a){if(!/^\w+$/.test(a||''))return;if(a==='today'){U.x={};U.range=ymd(new Date());setMonth(Date.now());U.page=0;render();return}if(R)return draw();const b=document.querySelector(`[data-a="${a}"],[data-act="${a}"]`);if(b)b.click()}
 addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.isx==='do')doAct(e.data.act)});
 {const m=/do=(\w+)/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>doAct(m[1]),0)}}
 /* ---------- today at a glance (shared hero, timeline and motion from ui.js) ---------- */
