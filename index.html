@@ -971,7 +971,7 @@ function workView(){
   };
   $('#nx')&&($('#nx').onclick=()=>{R.cur++;keepRun();draw()});
   $('#fn').onclick=()=>{R.list.forEach(y=>{if(y.t0){y.acc+=Date.now()-y.t0;y.t0=null}});R.fin=true;keepRun();draw()};
-  $('#rd').onclick=()=>{if(confirm('Discard this workout? Nothing will be logged.')){clearRun();dlg.close()}};
+  $('#rd').onclick=async()=>{if(await UI.confirm({title:'Discard this workout?',body:'Nothing from it is logged.',ok:'Discard',cancel:'Keep going',danger:true})){clearRun();dlg.close()}};
 }
 function restView(){
   const x=R.list[R.cur];
@@ -1258,7 +1258,8 @@ const ACT={
   review:()=>reviewForm(rvDefault()),rvgo:v=>v&&reviewForm(v),rvnote:v=>{dlg.classList.remove('rvd');noteForm(v)},
   rvcopy:()=>{const t=reviewText();(navigator.clipboard?.writeText(t)||Promise.reject()).then(()=>toast('Review copied'),()=>toast('Copy failed — select the text instead'))},
   bak:()=>dl(`training-backup-${ymd(new Date())}.json`,JSON.stringify(S),'application/json'),
-  clear:()=>{if(confirm('Delete ALL entries and notes on this device?')){S={...S,log:[],notes:{}};save();U.range='all';boot()}},
+  clear:()=>UI.confirm({title:'Delete everything?',body:'All entries and notes on this device are deleted. Back up first if you might want them.',ok:'Delete all',danger:true})
+    .then(ok=>{if(ok){S={...S,log:[],notes:{}};save();U.range='all';boot()}}),
   prev:()=>shift(-1),next:()=>shift(1),tod:()=>{setMonth(Date.now());render()},
   day:v=>{U.range=U.range===v?'all':v;U.page=0;render()},
   rng:v=>{U.range=U.range===v?'all':v;U.page=0;render()},   // the Today card's period tiles; tap again for all time
@@ -1267,7 +1268,9 @@ const ACT={
   xclr:k=>{if(k==='stat'||k==='ex'||k==='range')U[k]='all';else delete U.x[k];U.page=0;render()},
   xall:()=>{U.stat='all';U.ex='all';U.x={};if(/^\d{4}-/.test(U.range))U.range='all';U.page=0;render()},
   edit:v=>entryForm(S.log.find(t=>t.id===v)),
-  del:v=>{if(confirm('Delete this entry?')){S.log=S.log.filter(t=>t.id!==v);save();render()}},
+  // a delete happens at once and can be taken back from the toast (the entry goes back where it was)
+  del:v=>{const i=S.log.findIndex(t=>t.id===v);if(i<0)return;const[t]=S.log.splice(i,1);save();render();
+    UI.undo(`${t.ex||t.exercise||'Entry'} deleted`,()=>{S.log.splice(Math.min(i,S.log.length),0,t);save();render()})},
   pp:()=>{U.page--;render()},pn:()=>{U.page++;render()}
 };
 function shift(k){const d=new Date(U.month.y,U.month.m+k,1);U.month={y:d.getFullYear(),m:d.getMonth()};render()}
@@ -1291,7 +1294,7 @@ $('#file').addEventListener('change',async e=>{
     const s=JSON.parse(txt);if(!Array.isArray(s?.log))throw 0;
     // another app's backup (or a broken one) has no training rows in it: refuse it before anything is replaced
     const N=fix(s,S),bad=s.log.length-N.log.length;if(bad&&!N.log.length)throw 0;
-    if(!confirm(`Replace everything here with this backup (${N.log.length} entries${bad?`; ${bad} unreadable rows left out`:''})?`))return;
+    if(!await UI.confirm({title:'Restore this backup?',body:`Everything here is replaced with the backup's ${N.log.length} entries${bad?` (${bad} unreadable rows, left out)`:''}.`,ok:'Replace',danger:true}))return;
     S=N;save();boot();toast('Backup restored');
   }catch(x){toast('Not a valid backup file')}
 });
