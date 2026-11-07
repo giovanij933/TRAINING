@@ -640,7 +640,7 @@ function render(){
   const push=t.G.PUSH?.sets||0,pull=t.G.PULL?.sets||0,lift=push+pull+(t.G.LEGS?.sets||0);
 
   $('#top').innerHTML=heroToday();
-  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
+  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample year to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
 <section class="g g4">
  <div class="card"><p class="h">Workouts</p><div class="k">This week</div><div class="big ${tk.wkDays>=S.goal?'pos':''}">${tk.wkDays} / ${S.goal}</div>
   ${gauge([[Math.min(1,tk.wkDays/S.goal),'sg','',`This week: ${tk.wkDays} of ${S.goal} workouts`]],pct(tk.wkDays,S.goal))}
@@ -1095,34 +1095,61 @@ function exportCSV(){
   dl(`training-${ymd(new Date())}.csv`,rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');
 }
 function sample(){
-  // four weeks of the app's own split, built from the exercise library: each PUSH / PULL / LEGS day is that day's
-  // default picks (PICK) plus one rotating accessory, CARDIO rotates machines, STRETCH runs the default holds.
-  // Loads climb a little each week; numbers follow your units.
-  const kg=S.wu==='kg',km=S.du==='km',L=lb=>kg?Math.round(lb*.4536/2.5)*2.5:lb,D=mi=>km?Math.round(mi*1.609*10)/10:mi;
-  // [sets, reps, starting load in lb, lb added a week] for weighted lifts; [sets, starting reps, reps added a week] for bodyweight
-  const W={'Bench Press':[3,5,135,5],'Overhead Press':[3,5,85,2.5],'Incline Dumbbell Press':[3,8,50,2.5],'Lateral Raise':[3,12,15,0],'Triceps Pushdown':[3,10,40,5],
-    'Dumbbell Bench Press':[3,8,55,2.5],'Cable Fly':[3,12,30,2.5],'Deadlift':[2,5,225,10],'Barbell Row':[3,6,115,5],'Face Pull':[3,15,35,2.5],'Dumbbell Curl':[3,10,25,0],
-    'Lat Pulldown':[3,10,120,5],'Hammer Curl':[3,10,25,2.5],'Back Squat':[3,5,185,10],'Romanian Deadlift':[3,8,155,10],'Leg Press':[3,10,270,10],'Leg Curl':[3,12,80,5],
-    'Standing Calf Raise':[3,12,120,10],'Bulgarian Split Squat':[3,8,40,5],'Hip Thrust':[3,8,185,10],'Leg Extension':[3,12,90,5]};
-  const B={'Pull-up':[3,6,1],'Dip':[3,8,1],'Chin-up':[3,6,1]};
+  // a year of the app's own split, built from the exercise library and anchored so today is a PUSH day: PUSH, PULL,
+  // CARDIO, LEGS, rest, a run with the stretch routine, rest. Each lifting day is that day's default picks (PICK) plus
+  // one accessory that rotates by block. Strength climbs fast at first and slower later, in six-week blocks: five
+  // weeks of building (RPE creeping from 7 to 9) and a lighter deload week. A missed session now and then, a week off
+  // with the flu in the spring (back 10% lighter), a summer week away (hikes, no gym) and a quiet Christmas week.
+  // Runs get longer and faster. Loads land on real plate and dumbbell steps; numbers follow your units. Fixed seed:
+  // the same sample every time, only the dates move with today.
+  let s=20250707;const rnd=()=>((s=Math.imul(s^s>>>15,2246822507)^Math.imul(s^s>>>13,3266489909),(s^=s>>>16)>>>0)/4294967296);
+  const kg=S.wu==='kg',km=S.du==='km',D=mi=>km?Math.round(mi*1.609*10)/10:Math.round(mi*10)/10,pick=a=>a[Math.floor(rnd()*a.length)];
+  // a load on the nearest step: barbells and machines 5 lb (2.5 kg), light dumbbells and cables 2.5 lb (1 kg)
+  const L=(lb,fine)=>kg?(fine?Math.max(1,Math.round(lb*.4536)):Math.round(lb*.4536/2.5)*2.5):fine?Math.round(lb/2.5)*2.5:Math.round(lb/5)*5;
+  // weighted: [sets, reps, lb at the start, lb a year on, light steps]; bodyweight: [sets, reps at the start, a year on]
+  const W={'Bench Press':[3,5,135,185],'Overhead Press':[3,5,85,115],'Incline Dumbbell Press':[3,8,45,65],'Lateral Raise':[3,12,15,25,1],'Triceps Pushdown':[3,10,40,65,1],
+    'Dumbbell Bench Press':[3,8,50,75],'Cable Fly':[3,12,25,40,1],'Deadlift':[1,5,225,335],'Barbell Row':[3,6,115,165],'Face Pull':[3,15,30,50,1],'Dumbbell Curl':[3,10,20,35,1],
+    'Lat Pulldown':[3,10,110,160],'Hammer Curl':[3,10,25,35,1],'Back Squat':[3,5,185,275],'Romanian Deadlift':[3,8,155,225],'Leg Press':[3,10,270,410],'Leg Curl':[3,12,70,110],
+    'Standing Calf Raise':[3,12,120,190],'Bulgarian Split Squat':[3,8,30,55,1],'Hip Thrust':[3,8,185,295],'Leg Extension':[3,12,80,130]};
+  const B={'Pull-up':[3,6,11],'Dip':[3,8,15],'Chin-up':[3,6,11]};
   const ACC={PUSH:['Dumbbell Bench Press','Cable Fly','Dip'],PULL:['Lat Pulldown','Hammer Curl','Chin-up'],LEGS:['Bulgarian Split Squat','Hip Thrust','Leg Extension']};
-  const CARDIO=[['Run',3,28],['Row Erg',3.1,22],['Incline Walk',2,35],['Bike',8,30]];
-  // the week, starting today (so the sample always runs up to today's push day): [day plan(s)]
-  const PLAN={0:['PUSH'],1:['PULL'],2:['CARDIO'],3:['LEGS'],5:['CARDIO','STRETCH']};
-  const n=new Date();let cardio=0;
-  for(let ago=27;ago>=0;ago--){
-    const d=new Date(n.getFullYear(),n.getMonth(),n.getDate()-ago),days=PLAN[(7-ago%7)%7];if(!days)continue;
-    const wk=3-Math.floor(ago/7);let t=new Date(d.getFullYear(),d.getMonth(),d.getDate(),6,30).getTime();
+  // [machine, miles, minutes] at the start and how much faster a year on; the weekend run grows from 3 to 5 miles
+  const MID=[['Row Erg',3.1,23,.9],['Bike',8,30,.85],['Incline Walk',2,35,1]];
+  const PLAN={0:['PUSH'],1:['PULL'],2:['CARDIO'],3:['LEGS'],5:['RUN','STRETCH']};
+  const NOTE={pr:['New best. Felt smooth.','Top set moved fast.','Belt on for the top set. Solid.'],hard:['Grip gave out on the last set.','Felt heavy. Slept badly.','Ground out the last rep.'],
+    dl:['Deload. Kept it crisp.'],run:['Easy pace, nose breathing.','Negative split.','Windy. Held the pace anyway.']};
+  const n=new Date(),t0=new Date(n.getFullYear(),n.getMonth(),n.getDate());let mid=0,acc=0,sick=0,back=0;
+  for(let ago=364;ago>=0;ago--){
+    const d=new Date(t0);d.setDate(d.getDate()-ago);const w=(364-ago)/7,wk=Math.floor(w),m=d.getMonth(),dd=d.getDate();
+    const am=1+(8-new Date(d.getFullYear(),7,1).getDay())%7,away=m===7&&dd>=am-2&&dd<am+7,xmas=(m===11&&dd>=24)||(m===0&&dd<=1);
+    let days=PLAN[(7-ago%7)%7];
+    // the flu: ten days off from week 20 (a whole calendar week without a workout), then a week 10% lighter
+    const flu=wk===20||wk===21&&(364-ago)%7<3;if(flu){sick=1;continue}if(sick){sick=0;back=1}else if(wk>22)back=0;
+    // a week away: two hikes and a walk instead of the gym
+    if(away){if([1,3,5].includes(ago%7)){const h=ago%7!==3;S.log.push({id:uid(),at:new Date(d.getFullYear(),m,dd,9,30).getTime(),ex:h?'Hike':'Walk',type:'C',sets:0,reps:0,load:0,dist:D(h?5+rnd()*2:3),mins:h?120+Math.round(rnd()*40):60,rpe:h?6:3,note:h?'Vacation hike.':''})}continue}
+    if(!days||xmas&&days[0]!=='RUN'||rnd()<.06)continue;   // rest days, Christmas, and a session missed now and then
+    // the block: weeks 1-5 build, week 6 deloads; the curve flattens as the year goes on
+    const blk=wk%6,dl=blk===5,f=(1-Math.exp(-wk/24))/(1-Math.exp(-52/24)),k=dl?.88:back?.9:1;
+    let t=new Date(d.getFullYear(),m,dd,6,30+Math.floor(rnd()*15)).getTime();
     // today's session finishes before now; very early in the day there's no room for it yet
-    if(!ago){t=Math.min(t,n-75*6e4);if(t<d.getTime())continue}
-    const add=(ex,f)=>{const type=XT[ex];if(!type)return;S.log.push({id:uid(),at:t,ex,type,sets:0,reps:0,load:0,dist:0,mins:0,rpe:0,note:'',...f});t+=(type==='S'?2:8)*6e4};
+    if(!ago){t=Math.min(t,n-75*6e4);if(t<t0.getTime())continue}
+    const add=(ex,fl)=>{if(!XT[ex])return;S.log.push({id:uid(),at:t,ex,type:XT[ex],sets:0,reps:0,load:0,dist:0,mins:0,rpe:null,note:'',...fl});t+=(XT[ex]==='S'?2:XT[ex]==='C'?fl.mins+5:9)*6e4};
     for(const day of days){
-      if(day==='CARDIO'){const [ex,mi,min]=CARDIO[cardio++%CARDIO.length];add(ex,{dist:D(Math.round((mi+wk*.1)*10)/10),mins:Math.round(min-wk*.5),rpe:6+wk%2})}
-      else if(day==='STRETCH')PICK.STRETCH.forEach(ex=>add(ex,{sets:2,reps:30+(wk>1?5:0)}));
-      else [...PICK[day],ACC[day][wk%ACC[day].length]].forEach(ex=>{
-        if(W[ex]){const [sets,reps,lb,up]=W[ex];add(ex,{sets,reps,load:L(lb+up*wk),rpe:7+(wk%2)*.5+(reps<=5?1:0)})}
-        else if(B[ex]){const [sets,reps,up]=B[ex];add(ex,{sets,reps:reps+up*wk,rpe:8})}});
+      if(day==='CARDIO'){const [ex,mi,min,fast]=MID[mid++%MID.length],mins=Math.round(min*(1-(1-fast)*f)*(dl?1.05:1)+(rnd()-.5)*2);
+        add(ex,{dist:D(mi*(1+.05*f)),mins,rpe:dl?5:6+Math.round(rnd()*2)})}
+      else if(day==='RUN'){const mi=3+2*f*(rnd()<.3?1:.6),pace=9.4-1.1*f+(rnd()-.5)*.4+(dl?.3:0);
+        add('Run',{dist:D(mi),mins:Math.round(mi*pace),rpe:mi>4.2?8:6+Math.round(rnd()),note:rnd()<.08?pick(NOTE.run):''})}
+      else if(day==='STRETCH')PICK.STRETCH.forEach(ex=>add(ex,{sets:2,reps:wk<16?30:wk<34?40:45}));
+      else [...PICK[day],ACC[day][Math.floor(wk/6)%ACC[day].length]].forEach(ex=>{
+        if(W[ex]){const [sets,reps,a,b,fine]=W[ex],lb=(a+(b-a)*f*(.96+blk*.01))*k,top=blk===4&&rnd()<.15;
+          // a missed rep at the top of a block now and then
+          const r=top&&reps<=8?reps-1:reps,rpe=dl?6:Math.min(10,7+blk*.5+(top?.5:0)+(rnd()<.2?.5:0));
+          add(ex,{sets,reps:r,load:L(lb,fine),rpe,note:rnd()<.05?pick(dl?NOTE.dl:top||rpe>=9?NOTE.hard:NOTE.pr):''})}
+        else if(B[ex]){const [sets,r0,r1]=B[ex];add(ex,{sets,reps:Math.round((r0+(r1-r0)*f)*(dl?.8:1)),rpe:dl?6:8+(blk>3?.5:0)})}});
     }
+    const key=ymd(d);
+    if(back===1&&days[0]!=='RUN'&&S.log.some(e=>ymd(new Date(e.at))===key)){S.notes[key]??='Back after the flu. Took 10% off everything this week.';back=2}
+    else if(dl&&days[0]==='PUSH')S.notes[key]??='Deload week: same lifts, lighter, crisp reps.';
   }
   save();boot();
 }
