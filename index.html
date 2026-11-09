@@ -1346,10 +1346,10 @@ function heroToday(){
   const A=scored(),per=r=>{const E=A.filter(e=>inRange(e.day,r)),W=E.filter(e=>e.type!=='S'),L=W.filter(e=>e.type!=='C');
     return{E,W,L,n:new Set(W.map(e=>e.day)).size,vol:E.reduce((a,e)=>a+e.vol,0),sets:L.reduce((a,e)=>a+(+e.sets||0),0),
       cm:Math.round(W.filter(e=>e.type==='C').reduce((a,e)=>a+(+e.mins||0),0)),cd:W.filter(e=>e.type==='C').reduce((a,e)=>a+(+e.dist||0),0),prs:E.filter(e=>e.pr).length}};
-  const td=per('today'),wk=per('week'),mo=per('month'),goal=S.goal||4,str=td.E.length>td.W.length;
+  const td=per('today'),wk=per('week'),mo=per('month'),yr=per('year'),goal=S.goal||4,str=td.E.length>td.W.length;
   // a day off once the weekly goal is hit is a planned rest day, as on TODAY
   const rest=!td.W.length&&wk.n>=goal,pl=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
-  const k=v=>v>=1e4?(v/1e3).toFixed(v>=1e5?0:1)+'k':n0(v);   // compact volume so three tiles fit across a phone
+  const k=v=>v>=1e6?(v/1e6).toFixed(v>=1e7?1:2)+'M':v>=1e4?(v/1e3).toFixed(v>=1e5?0:1)+'k':n0(v);   // compact volume so the tiles fit on a phone
   const vs=x=>x.vol?`${k(x.vol)} ${S.wu}`:x.cm?`${x.cm} min cardio`:'';
   const tile=(r,label,value,tone,sub)=>({label,value,tone,sub,attrs:{'data-a':'rng','data-v':r,'aria-label':`${label}: ${value}, ${sub}. Show ${RANGES[r].toLowerCase()} below`},on:U.range===r});
   const tv=td.L.length?(td.vol?`${k(td.vol)} ${S.wu}`:pl(td.sets,'set')):td.cm?`${td.cm} min`:'—';
@@ -1358,7 +1358,8 @@ function heroToday(){
   return UI.hero({key:'train',title:'Today',sub:td.W.length?'Workout done ✓':rest?'Rest day · weekly goal hit':str?'Stretched · no workout yet':'No workout yet today',
     stats:[tile('today','Today',tv,td.W.length?'pos':'',ts),   // green once you've trained today
       tile('week','Week',`${wk.n} / ${goal}`,wk.n>=goal?'pos':'',vs(wk)||'no workouts yet'),
-      tile('month','Month',`${mo.n}`,'',[vs(mo),mo.prs?pl(mo.prs,'PR'):''].filter(Boolean).join(' · ')||'no workouts yet')],
+      tile('month','Month',`${mo.n}`,'',[vs(mo),mo.prs?pl(mo.prs,'PR'):''].filter(Boolean).join(' · ')||'no workouts yet'),
+      tile('year','Year',`${yr.n}`,'',[vs(yr),yr.prs?pl(yr.prs,'PR'):''].filter(Boolean).join(' · ')||'no workouts yet')],
     action:{label:'▶ Start workout',attrs:{'data-a':'go'}},
     log:td.E.slice().sort((a,b)=>a.at-b.at).map(e=>({at:e.at,tag:e.ex,text:what(e),tone:e.type==='S'?'':'pos'}))});
 }
