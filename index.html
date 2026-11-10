@@ -399,11 +399,13 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('
 function setMonth(ms){const d=new Date(ms);U.month={y:d.getFullYear(),m:d.getMonth()}}
 let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3200)}
 
+// the day an entry falls on, worked out once per time stamp
+const DAYOF=new Map(),dayOf=at=>{let d=DAYOF.get(at);if(d===undefined){d=ymd(new Date(at));DAYOF.set(at,d)}return d};
 // Score every entry against history. For each exercise, the best entry of a day (the top set)
 // is compared with the best entry of the previous day that exercise was trained:
 //   d = % change in performance. First-ever day = baseline (d null). Back-off rows stay null.
 function scored(){
-  const A=S.log.map(e=>({...e,day:ymd(new Date(e.at)),perf:perf(e),vol:vol(e),d:null,pr:false,base:false})).sort((a,b)=>a.at-b.at),G={};
+  const A=S.log.map(e=>({...e,day:dayOf(e.at),perf:perf(e),vol:vol(e),d:null,pr:false,base:false})).sort((a,b)=>a.at-b.at),G={};
   A.forEach(e=>{((G[exk(e.ex)+'|'+e.type]??={})[e.day]??=[]).push(e)});
   for(const k in G){
     let prev=null,best=0;
@@ -430,9 +432,18 @@ function prevBest(ex,type,day,skip){
 // skip leaves one filter out: a card that sets a filter shows everything else, with its own choice highlighted
 // the range filter on its own (weeks start on Sunday): the Today card's tiles count with it too
 const wkOf=s=>{const d=pd(s);d.setDate(d.getDate()-(d.getDay()+6)%7);return ymd(d)};
-function inRange(d,r=U.range){const today=ymd(new Date());return r==='all'||(r==='today'?d===today:r==='week'?wkOf(d)===wkOf(today):r==='month'?d.slice(0,7)===today.slice(0,7):r==='year'?d.slice(0,4)===today.slice(0,4):d===r)}
+// the test for a range, made once for each pass over the log (working out today and its week again for every entry was slow)
+function ranger(r=U.range){
+  const today=ymd(new Date());
+  if(r==='all')return()=>true;
+  if(r==='today')return d=>d===today;
+  if(r==='week'){const lo=wkOf(today),b=pd(lo);b.setDate(b.getDate()+6);const hi=ymd(b);return d=>d>=lo&&d<=hi}
+  if(r==='month'){const m=today.slice(0,7);return d=>d.slice(0,7)===m}
+  if(r==='year'){const y=today.slice(0,4);return d=>d.slice(0,4)===y}
+  return d=>d===r;
+}
 function view(useRange=true,skip=''){
-  const wk=wkOf,inR=d=>inRange(d);
+  const wk=wkOf,inR=ranger();
   const x=U.x,on=k=>k!==skip&&x[k]!=null,st=skip==='stat'?'all':U.stat;
   return scored().filter(e=>(skip==='ex'||U.ex==='all'||exk(e.ex)===U.ex)&&(st==='all'||(st==='up'?e.d>0:st==='down'?e.d<0:e.d===0))&&(!useRange||inR(e.day))
     &&(!on('grp')||grp(e)===x.grp)&&(!on('week')||wk(e.day)===x.week));
@@ -640,8 +651,8 @@ function render(){
   const vd=tk.lastVol?(tk.wkVol-tk.lastVol)/tk.lastVol*100:null;
   const push=t.G.PUSH?.sets||0,pull=t.G.PULL?.sets||0,lift=push+pull+(t.G.LEGS?.sets||0);
 
-  $('#top').innerHTML=heroToday();
-  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample year to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
+  UI.paint($('#top'),heroToday(),{now:true});
+  UI.paint($('#app'),`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample year to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
 <section class="g g4">
  <div class="card"><p class="h">Workouts</p><div class="k">This week</div><div class="big ${tk.wkDays>=S.goal?'pos':''}">${tk.wkDays} / ${S.goal}</div>
   ${gauge([[Math.min(1,tk.wkDays/S.goal),'sg','',`This week: ${tk.wkDays} of ${S.goal} workouts`]],pct(tk.wkDays,S.goal))}
@@ -682,7 +693,7 @@ ${bodyHTML(t)}
  <div class="card"><p class="h">Workouts per week</p><div class="k">Last 8 weeks · goal ${S.goal}</div><div class="big ${tk.wkDays>=S.goal?'pos':''}">${tk.wkDays}</div>${bars(tk.weeksDays,0,weekAt(tk.wkKeys,tk.weeksDays,v=>`${v} workout${v===1?'':'s'}`))}</div>
 </section>
 ${table(T)}
-<footer><p>Perf = estimated 1RM (weighted) · reps per set (bodyweight) · speed (cardio) · hold (stretch). &Delta; = change in Perf vs the previous day you trained that exercise; the first day is the baseline. Cardio target = 150 min a week (WHO guideline).</p></footer>`;
+<footer><p>Perf = estimated 1RM (weighted) · reps per set (bodyweight) · speed (cardio) · hold (stretch). &Delta; = change in Perf vs the previous day you trained that exercise; the first day is the baseline. Cardio target = 150 min a week (WHO guideline).</p></footer>`);
 }
 
 /* ---------- dialogs ---------- */
@@ -1343,7 +1354,7 @@ addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.isx
 function heroToday(){
   if(!S.log.length)return '';
   // each tile is the range filter's own slice of the log (all exercises, no card filters), so tapping one shows the same totals
-  const A=scored(),per=r=>{const E=A.filter(e=>inRange(e.day,r)),W=E.filter(e=>e.type!=='S'),L=W.filter(e=>e.type!=='C');
+  const A=scored(),per=r=>{const inR=ranger(r),E=A.filter(e=>inR(e.day)),W=E.filter(e=>e.type!=='S'),L=W.filter(e=>e.type!=='C');
     return{E,W,L,n:new Set(W.map(e=>e.day)).size,vol:E.reduce((a,e)=>a+e.vol,0),sets:L.reduce((a,e)=>a+(+e.sets||0),0),
       cm:Math.round(W.filter(e=>e.type==='C').reduce((a,e)=>a+(+e.mins||0),0)),cd:W.filter(e=>e.type==='C').reduce((a,e)=>a+(+e.dist||0),0),prs:E.filter(e=>e.pr).length}};
   const td=per('today'),wk=per('week'),mo=per('month'),yr=per('year'),goal=S.goal||4,str=td.E.length>td.W.length;
