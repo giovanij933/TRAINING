@@ -120,6 +120,8 @@ dialog{background:var(--panel);color:var(--tx);border:1px solid var(--border-sof
 dialog::backdrop{background:var(--scrim)}
 dialog h3{margin:0 0 14px;font-size:13px;letter-spacing:.06em;color:var(--text-primary)}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.pmr{display:flex;align-items:flex-end;gap:8px;min-width:0}.pmr label{flex:1;min-width:0}.pmr input{width:100%}
+.pmr .pm{flex:none;width:48px;height:44px;padding:0;font-size:20px;line-height:1}
 label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
 label input,label select,label textarea,dialog textarea{width:100%;font-size:13px;letter-spacing:0;text-transform:none;color:var(--tx)}
 textarea{resize:vertical}
@@ -785,6 +787,9 @@ function lastTxt(ex){
   const day=E.reduce((a,e)=>{const d=ymd(new Date(e.at));return d>a?d:a},''),D=E.filter(e=>ymd(new Date(e.at))===day).sort((a,b)=>a.at-b.at);
   return `Last (${dlabel(day)}): `+D.map(e=>e.type==='C'?`${n1(e.dist)} ${S.du} in ${fm(e.mins)}`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:e.type==='S'?'s':''}`).join(' · ');
 }
+// the load step for − and +: the jump people make most (two small plates)
+const LS=()=>S.wu==='kg'?2.5:5;
+const pmb=(id,d,label)=>`<button type="button" class="pm" data-pm="${id}" data-d="${d}" aria-label="${label}">${d<0?'−':'+'}</button>`;
 // start a set from the last one this workout, else the top row of last time
 function nextSet(x){
   if(x.sets.length)return x.sets[x.sets.length-1];
@@ -952,14 +957,17 @@ function workView(){
   <button type="button" class="pri" id="hs" style="width:100%">START HOLD ${x.sets.length+1}</button>
   <p class="dim" style="margin-top:8px">Each side counts as one hold. Ease into mild tension and breathe; never stretch into pain. <button type="button" class="lnk" id="hl">Log without timer</button></p>`
   :`<ol class="sets">${x.sets.map((s,j)=>`<li>${s.reps} ${x.type==='W'?`× ${n1(s.load)}${unit(x)}`:'reps'} <button type="button" data-s="${j}" aria-label="Remove set">X</button></li>`).join('')}</ol>
-  <div class="fgrid"><label>Reps<input id="ir" type="number" inputmode="numeric" min="1" step="1" value="${ns.reps||''}"></label>
-   ${x.type==='W'?`<label>Load (${S.wu})<input id="il" inputmode="decimal" autocomplete="off" value="${ns.load??''}"></label>`:''}</div>
+  <div class="fgrid"><div class="pmr">${pmb('ir',-1,'1 rep fewer')}<label>Reps<input id="ir" type="number" inputmode="numeric" min="1" step="1" value="${ns.reps||''}"></label>${pmb('ir',1,'1 rep more')}</div>
+   ${x.type==='W'?`<div class="pmr">${pmb('il',-LS(),`${LS()} ${S.wu} less`)}<label>Load (${S.wu})<input id="il" inputmode="decimal" autocomplete="off" value="${ns.load??''}"></label>${pmb('il',LS(),`${LS()} ${S.wu} more`)}</div>`:''}</div>
   <button type="button" class="pri" id="ls" style="width:100%">LOG SET ${x.sets.length+1} · REST ${fm(R.restSec/60)}</button>`}
   <div class="fa2"><button type="button" class="ghost" id="rd">DISCARD</button>${R.cur<R.list.length-1?'<button type="button" id="nx">NEXT &gt;</button>':''}<button type="button" class="pri" id="fn">FINISH</button></div></div>`;
   const tick=()=>{$('#wt').textContent='· '+fm((Date.now()-R.start)/60000);if(C)$('#cc').textContent=fm(cms(x)/60000)};
   tick();RI=setInterval(tick,250);
   dlg.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{R.cur=+b.dataset.x;keepRun();draw()});
   dlg.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{x.sets.splice(+b.dataset.s,1);keepRun();draw()});
+  // − and +: a rep, or the smallest usual jump in load (5 lb, 2.5 kg), without the keyboard. The field still takes any number.
+  dlg.querySelectorAll('[data-pm]').forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.pm),d=+b.dataset.d;
+    if(i.id==='ir')i.value=Math.max(1,Math.round((+i.value||0)+d));else{const v=dn(i.value);i.value=Math.max(0,Math.round(((v>=0?v:0)+d)*100)/100)}});
   $('#xa').onclick=()=>{$('#xr').hidden=false;$('#xn').focus()};
   $('#xk').onclick=()=>{const n=$('#xn').value.trim();if(!n)return;R.list.push(item(PRESET.find(p=>exk(p)===exk(n))||n));R.cur=R.list.length-1;keepRun();draw()};
   if(H){
