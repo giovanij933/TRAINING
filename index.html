@@ -127,6 +127,10 @@ dialog h3{margin:0 0 14px;font-size:13px;letter-spacing:.06em;color:var(--text-p
 .exg{margin:0 0 14px}.exg-figs{display:flex;justify-content:center;gap:22px;margin:0 0 16px}.exg-fig{width:min(36%,150px);height:auto}
 .exg-fig polygon{fill:color-mix(in srgb,var(--text-muted) 22%,var(--track))}.exg-fig .exg-n{fill:var(--track)}
 .exg-fig .exg-p{fill:var(--accent)}.exg-fig .exg-s{fill:color-mix(in srgb,var(--accent) 40%,var(--track))}
+.exg-mini{display:inline-flex;gap:1px;flex:none}.exg-mini .exg-fig{width:auto;height:40px}
+/* in the workout's list the rows keep their height, so LOG SET stays where it was */
+.xl .exg-mini .exg-fig{height:32px}.xl button:has(.exg-mini){padding-top:6px;padding-bottom:6px}
+dialog.ss .prw .exg-mini{margin-right:6px}
 .exg-l{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px;line-height:1.45}
 .exg-l dt{padding-top:2px;color:var(--text-secondary);font-size:11px;letter-spacing:.05em;text-transform:uppercase}.exg-l dd{margin:0;color:var(--text-primary)}
 .pmr{display:flex;align-items:flex-end;gap:8px;min-width:0}.pmr label{flex:1;min-width:0}.pmr input{width:100%}
@@ -899,7 +903,7 @@ function startForm(){
     $('#pt').textContent=`${DN(D)} DAY · ${pl.length} exercise${pl.length===1?'':'s'}`;
     $('#pw').textContent=[D===nx.day?(nx.on?`Next after ${ago(nx.on)}'s ${DN(nx.after)}`:'First session · the cycle starts with PUSH'):`You picked ${DN(D)} · up next was ${DN(nx.day)}`,
       D==='STRETCH'?'one hold per area':lifts&&st?`${lifts} ${D==='CARDIO'?'cardio':'lifts'} + ${st} stretch${st===1?'':'es'}`:''].filter(Boolean).join(' · ');
-    $('#pl').innerHTML=pl.length?pl.map((p,i)=>`<div class="prw"><div><b>${esc(p.ex)}</b><small>${esc(lab(p))} · ${S.log.some(e=>exk(e.ex)===exk(p.ex))?esc(lastTxt(p.ex)):'New to you'}</small></div>
+    $('#pl').innerHTML=pl.length?pl.map((p,i)=>`<div class="prw">${window.EXG?.mini(p.ex)||''}<div><b>${esc(p.ex)}</b><small>${esc(lab(p))} · ${S.log.some(e=>exk(e.ex)===exk(p.ex))?esc(lastTxt(p.ex)):'New to you'}</small></div>
       ${p.s==null?'':`<button type="button" data-sw="${i}" aria-label="Swap ${esc(p.ex)}">SWAP</button>`}<button type="button" data-sk="${i}" aria-label="${p.s==null?'Remove':'Skip'} ${esc(p.ex)}">${p.s==null?'REMOVE':'SKIP'}</button></div>`).join('')
       :'<p class="dim">Nothing left to pick here. Restore a skipped exercise or add one.</p>';
     const G=D==='STRETCH'?Object.entries(STRETCHES):Object.entries(LIB[D]).map(([t,L])=>[t==='S'?'Stretch · cooldown':TYPES[t],L]),on=x=>pl.some(p=>exk(p.ex)===exk(x));
@@ -953,7 +957,7 @@ function draw(){
 }
 function workView(){
   const x=R.list[R.cur],C=x.type==='C',H=x.type==='S',ns=nextSet(x);
-  const tab=(y,i)=>`<button type="button" data-x="${i}" class="${i===R.cur?'on':''}${y.sets.length||cms(y)?' dn':''}">${esc(y.ex)}<em>${y.type==='C'?(cms(y)?fm(cms(y)/60000):'—'):`${y.sets.length} ${y.type==='S'?'hold':'set'}${y.sets.length===1?'':'s'}`}</em></button>`;
+  const tab=(y,i)=>`<button type="button" data-x="${i}" class="${i===R.cur?'on':''}${y.sets.length||cms(y)?' dn':''}">${window.EXG?.mini(y.ex)||''}${esc(y.ex)}<em>${y.type==='C'?(cms(y)?fm(cms(y)/60000):'—'):`${y.sets.length} ${y.type==='S'?'hold':'set'}${y.sets.length===1?'':'s'}`}</em></button>`;
   dlg.innerHTML=`<div><h3>${DN(R.day)} DAY <span class="dim" id="wt"></span></h3>
   <div class="xl">${R.list.map(tab).join('')}<button type="button" id="xa">Add exercise<em>+</em></button></div>
   <div id="xr" class="chips" hidden><input id="xn" list="exs" placeholder="Exercise" autocomplete="off" style="flex:1;width:auto"><button type="button" id="xk">ADD</button>

@@ -292,5 +292,7 @@ VersaClimber|quads glutes lats|calves sdelt|Opposite arm and leg drive together;
     return `<div class="exg"><div class="exg-figs">${fig('front',g)}${fig('back',g)}</div><dl class="exg-l"><dt>${a}</dt><dd>${esc(names(g.p))}</dd>${
       g.s.length?`<dt>${b}</dt><dd>${esc(names(g.s))}</dd>`:''}<dt>How</dt><dd>${esc(g.cue)}</dd></dl></div>`;
   };
-  return {get,html,size:Object.keys(G).length};
+  // the two figures in miniature, beside the exercise's name in START's plan and the workout's list ('' without a guide)
+  const mini=name=>{const g=get(name);return g?`<span class="exg-mini" aria-hidden="true">${fig('front',g)}${fig('back',g)}</span>`:''};
+  return {get,html,mini,size:Object.keys(G).length};
 })();
