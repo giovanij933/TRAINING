@@ -124,6 +124,17 @@ dialog h3{margin:0 0 14px;font-size:13px;letter-spacing:.06em;color:var(--text-p
 .exg-open{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;padding:12px 0;margin:-12px 0;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .exg-open:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 .exg-i{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid currentColor;color:var(--accent-text);font:600 11px/1 var(--f);text-transform:none;letter-spacing:0}
+.exg-ib{all:unset;box-sizing:border-box;flex:none;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.exg-ib:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:50%}
+dialog.ss .prw .exg-ib{all:unset;box-sizing:border-box;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin:-14px -10px -14px -6px;cursor:pointer}
+/* the workout's list: the row and its ⓘ side by side (not one over the other, so a tap has one button under it); the
+   selected row's tint spans both */
+.xl .xrw{display:flex;align-items:stretch;border-bottom:1px solid var(--line);border-radius:10px}
+.xl .xrw>button[data-x]{flex:1;min-width:0;border-bottom:0}
+.xl .xrw:has(>button.on){background:var(--accent-soft)}.xl .xrw>button.on{background:none}
+.xl .xrw .exg-ib{all:unset;box-sizing:border-box;flex:none;width:44px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.xl .xrw .exg-ib::before{content:none}
+dialog.ss .prw .exg-ib:focus-visible,.xl .xrw .exg-ib:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:50%}
 .exg{margin:0 0 14px}.exg-figs{display:flex;justify-content:center;gap:22px;margin:0 0 16px}.exg-fig{width:min(36%,150px);height:auto}
 .exg-fig polygon{fill:color-mix(in srgb,var(--text-muted) 22%,var(--track))}.exg-fig .exg-n{fill:var(--track)}
 .exg-fig .exg-p{fill:var(--accent)}.exg-fig .exg-s{fill:color-mix(in srgb,var(--accent) 40%,var(--track))}
@@ -281,6 +292,7 @@ h1.brand{margin:0}
 <div id="xf" class="xf" hidden></div>
 <main id="app"></main>
 <dialog id="dlg"></dialog>
+<dialog id="gd" aria-labelledby="gdt"></dialog>
 <div id="toast" role="status"></div>
 
 <script src="db.js"></script>
@@ -903,7 +915,7 @@ function startForm(){
     $('#pt').textContent=`${DN(D)} DAY · ${pl.length} exercise${pl.length===1?'':'s'}`;
     $('#pw').textContent=[D===nx.day?(nx.on?`Next after ${ago(nx.on)}'s ${DN(nx.after)}`:'First session · the cycle starts with PUSH'):`You picked ${DN(D)} · up next was ${DN(nx.day)}`,
       D==='STRETCH'?'one hold per area':lifts&&st?`${lifts} ${D==='CARDIO'?'cardio':'lifts'} + ${st} stretch${st===1?'':'es'}`:''].filter(Boolean).join(' · ');
-    $('#pl').innerHTML=pl.length?pl.map((p,i)=>`<div class="prw">${window.EXG?.mini(p.ex)||''}<div><b>${esc(p.ex)}</b><small>${esc(lab(p))} · ${S.log.some(e=>exk(e.ex)===exk(p.ex))?esc(lastTxt(p.ex)):'New to you'}</small></div>
+    $('#pl').innerHTML=pl.length?pl.map((p,i)=>`<div class="prw">${window.EXG?.mini(p.ex)||''}<div><b>${esc(p.ex)}${window.EXG?.get(p.ex)?`<button type="button" class="exg-ib" data-g="${i}" aria-label="${esc(p.ex)}: the muscles it works and how to do it"><span class="exg-i" aria-hidden="true">i</span></button>`:''}</b><small>${esc(lab(p))} · ${S.log.some(e=>exk(e.ex)===exk(p.ex))?esc(lastTxt(p.ex)):'New to you'}</small></div>
       ${p.s==null?'':`<button type="button" data-sw="${i}" aria-label="Swap ${esc(p.ex)}">SWAP</button>`}<button type="button" data-sk="${i}" aria-label="${p.s==null?'Remove':'Skip'} ${esc(p.ex)}">${p.s==null?'REMOVE':'SKIP'}</button></div>`).join('')
       :'<p class="dim">Nothing left to pick here. Restore a skipped exercise or add one.</p>';
     const G=D==='STRETCH'?Object.entries(STRETCHES):Object.entries(LIB[D]).map(([t,L])=>[t==='S'?'Stretch · cooldown':TYPES[t],L]),on=x=>pl.some(p=>exk(p.ex)===exk(x));
@@ -923,6 +935,7 @@ function startForm(){
   };
   f.addEventListener('click',ev=>{
     const t=ev.target.closest('button');if(!t)return;const d=t.dataset;
+    if(d.g!=null){guide(pl[+d.g].ex);return}
     if(d.d&&d.d!==D){D=d.d;pl=plan(D);paint()}
     else if(d.sw){swap(+d.sw);paint(`[data-sw="${d.sw}"]`)}
     else if(d.sk){const i=+d.sk,p=pl[i];
@@ -951,13 +964,13 @@ function startForm(){
 
 function draw(){
   clearInterval(RI);cancelAnimationFrame(RA);
-  if(R.fin)finishView();else if(R.hold)holdView();else if(R.rest)restView();else if(R.info)infoView();else workView();
+  if(R.fin)finishView();else if(R.hold)holdView();else if(R.rest)restView();else workView();
   sheet();if(!dlg.open)dlg.showModal();
   wake(true);
 }
 function workView(){
   const x=R.list[R.cur],C=x.type==='C',H=x.type==='S',ns=nextSet(x);
-  const tab=(y,i)=>`<button type="button" data-x="${i}" class="${i===R.cur?'on':''}${y.sets.length||cms(y)?' dn':''}">${window.EXG?.mini(y.ex)||''}${esc(y.ex)}<em>${y.type==='C'?(cms(y)?fm(cms(y)/60000):'—'):`${y.sets.length} ${y.type==='S'?'hold':'set'}${y.sets.length===1?'':'s'}`}</em></button>`;
+  const tab=(y,i)=>`<div class="xrw"><button type="button" data-x="${i}" class="${i===R.cur?'on':''}${y.sets.length||cms(y)?' dn':''}">${window.EXG?.mini(y.ex)||''}${esc(y.ex)}<em>${y.type==='C'?(cms(y)?fm(cms(y)/60000):'—'):`${y.sets.length} ${y.type==='S'?'hold':'set'}${y.sets.length===1?'':'s'}`}</em></button>${window.EXG?.get(y.ex)?`<button type="button" class="exg-ib" data-g="${i}" aria-label="${esc(y.ex)}: the muscles it works and how to do it"><span class="exg-i" aria-hidden="true">i</span></button>`:''}</div>`;
   dlg.innerHTML=`<div><h3>${DN(R.day)} DAY <span class="dim" id="wt"></span></h3>
   <div class="xl">${R.list.map(tab).join('')}<button type="button" id="xa">Add exercise<em>+</em></button></div>
   <div id="xr" class="chips" hidden><input id="xn" list="exs" placeholder="Exercise" autocomplete="off" style="flex:1;width:auto"><button type="button" id="xk">ADD</button>
@@ -979,7 +992,8 @@ function workView(){
   tick();RI=setInterval(tick,250);
   dlg.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{R.cur=+b.dataset.x;keepRun();draw()});
   dlg.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{x.sets.splice(+b.dataset.s,1);keepRun();draw()});
-  $('#xi')&&($('#xi').onclick=()=>{R.info=true;keepRun();draw()});
+  $('#xi')&&($('#xi').onclick=()=>guide(x.ex,x.type));
+  dlg.querySelectorAll('.xl [data-g]').forEach(b=>b.onclick=()=>{const y=R.list[+b.dataset.g];guide(y.ex,y.type)});
   // − and +: a rep, or the smallest usual jump in load (5 lb, 2.5 kg), without the keyboard. The field still takes any number.
   dlg.querySelectorAll('[data-pm]').forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.pm),d=+b.dataset.d;
     if(i.id==='ir')i.value=Math.max(1,Math.round((+i.value||0)+d));else{const v=dn(i.value);i.value=Math.max(0,Math.round(((v>=0?v:0)+d)*100)/100)}});
@@ -1003,14 +1017,15 @@ function workView(){
   $('#fn').onclick=()=>{R.list.forEach(y=>{if(y.t0){y.acc+=Date.now()-y.t0;y.t0=null}});R.fin=true;keepRun();draw()};
   $('#rd').onclick=async()=>{if(await UI.confirm({title:'Discard this workout?',body:'Nothing from it is logged.',ok:'Discard',cancel:'Keep going',danger:true})){clearRun();dlg.close()}};
 }
-// an exercise's guide (exercises.js): the muscles it works, front and back, and how to do it well. It opens from the
-// exercise's name and takes the sheet until "Back to sets"; the workout clock keeps running.
-function infoView(){
-  const x=R.list[R.cur];if(!window.EXG?.get(x.ex)){R.info=false;return workView()}
-  dlg.innerHTML=`<div><h3>${esc(x.ex).toUpperCase()} <span class="dim" id="wt"></span></h3>${EXG.html(x.ex,x.type)}
-  <div class="fa2"><button type="button" class="pri" id="xb" style="flex:1">BACK TO SETS</button></div></div>`;
-  const tick=()=>{$('#wt').textContent='· '+fm((Date.now()-R.start)/60000)};tick();RI=setInterval(tick,250);
-  $('#xb').onclick=()=>{R.info=false;keepRun();draw()};
+// an exercise's guide (exercises.js): the muscles it works, front and back, and how to do it well. Every ⓘ opens it, in
+// START's plan, the workout's list and beside the current exercise: a sheet over the one that's open, closed with Done
+// (or Escape, or a tap outside), so you're back exactly where you were and a workout's clock never stops.
+function guide(name,type){
+  const d=$('#gd');if(!window.EXG?.get(name)||!d)return;
+  d.innerHTML=`<h3 id="gdt">${esc(name).toUpperCase()}</h3>${EXG.html(name,type||xtype(name))}
+  <div class="fa2"><button type="button" class="pri" data-gx style="flex:1">DONE</button></div>`;
+  d.onclick=e=>{if(e.target===d||e.target.closest('[data-gx]'))d.close()};
+  d.showModal();d.querySelector('[data-gx]').focus();
 }
 function restView(){
   const x=R.list[R.cur];
