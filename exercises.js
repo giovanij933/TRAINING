@@ -294,5 +294,15 @@ VersaClimber|quads glutes lats|calves sdelt|Opposite arm and leg drive together;
   };
   // the two figures in miniature, beside the exercise's name in START's plan and the workout's list ('' without a guide)
   const mini=name=>{const g=get(name);return g?`<span class="exg-mini" aria-hidden="true">${fig('front',g)}${fig('back',g)}</span>`:''};
-  return {get,html,mini,size:Object.keys(G).length};
+  // TODAY's plan art (isionxxx ARCHITECTURE.md, 2h): a picture as a small SVG in the shared plan-art classes (pa-*), which
+  // TODAY colours with the palette, light or dark, so it shows without this app's CSS. M: class here → [pa classes, attributes]
+  const toArt=(svg,M)=>{try{const r=new DOMParser().parseFromString(svg,'image/svg+xml').documentElement;if(r.nodeName!=='svg')return '';
+    [r,...r.querySelectorAll('*')].forEach(e=>{const k=[];(e.getAttribute('class')||'').split(/\s+/).forEach(c=>{const m=M[c];if(!m)return;if(m[0])k.push(m[0]);for(const a in m[1]||{})e.setAttribute(a,m[1][a])});
+      e.removeAttribute('class');e.removeAttribute('style');e.removeAttribute('aria-hidden');if(k.length)e.setAttribute('class',k.join(' '))});
+    return new XMLSerializer().serializeToString(r)}catch(e){return ''}};
+  // TODAY's plan: every muscle a session works, front and back (primary in any exercise is primary)
+  const art=names=>{const L=names.map(get).filter(Boolean);if(!L.length)return '';
+    const p=[...new Set(L.flatMap(g=>g.p))],g={p,s:[...new Set(L.flatMap(g=>g.s))].filter(k=>!p.includes(k))},at=(side,x)=>fig(side,g).replace(/^<svg[^>]*>/,`<svg x="${x}" width="100" height="220" viewBox="0 0 100 220">`);
+    return toArt(`<svg viewBox="0 0 206 220">${at('front',0)}${at('back',106)}</svg>`,{'exg-p':['pa-p'],'exg-s':['pa-s'],'exg-n':['pa-n']})};
+  return {get,html,mini,art,size:Object.keys(G).length};
 })();

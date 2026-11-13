@@ -887,9 +887,10 @@ function planRows(){
   // library don't place in the cycle, so a day of only those is just "Workout". Other stretch-only days fall through to
   // what START suggests next.
   if(T.some(e=>e.type!=='S')||nx.on===td&&nextDay(S.log.filter(e=>!day(e))).day==='STRETCH')
-    return [{title:nx.on===td?`${DN(nx.after)} day`:'Workout',sub:brief([...new Set(T.map(e=>e.ex))]),act:'today',done:true}];
+    return [{title:nx.on===td?`${DN(nx.after)} day`:'Workout',sub:brief([...new Set(T.map(e=>e.ex))]),act:'today',done:true,art:window.EXG?.art([...new Set(T.map(e=>e.ex))])||undefined}];
   const pl=plan(nx.day);
-  return [{title:`${DN(nx.day)} day`,sub:pl.length?brief(pl.map(p=>p.ex),S.log.length?'':'First session · '):'Nothing left to pick · restore a skipped exercise',act:'go'}];
+  // art: the muscles the session works, for TODAY's plan (exercises.js)
+  return [{title:`${DN(nx.day)} day`,sub:pl.length?brief(pl.map(p=>p.ex),S.log.length?'':'First session · '):'Nothing left to pick · restore a skipped exercise',act:'go',art:window.EXG?.art(pl.map(p=>p.ex))||undefined}];
 }
 
 function startForm(){
