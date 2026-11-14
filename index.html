@@ -47,8 +47,8 @@ button:hover,select:hover{border-color:var(--accent);color:var(--accent-text)}
 .g{display:grid;gap:12px;margin-bottom:12px}
 .g4{grid-template-columns:repeat(4,1fr)}.g21{grid-template-columns:2fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
 .card{background:var(--panel);border:1px solid var(--line);padding:16px;min-width:0}
-.h{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-primary);margin-bottom:12px}
-.k{font-size:11px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+.h{font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:12px}
+.k{font-size:12px;color:var(--dim)}
 .big{font-size:22px;font-weight:600;margin:2px 0 8px}
 .rowh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 .empty{margin-bottom:12px;border-color:var(--border)}
@@ -65,11 +65,11 @@ button:hover,select:hover{border-color:var(--accent);color:var(--accent-text)}
 .ev.rule{border-top:1px solid var(--line);margin-top:4px;padding-top:10px}
 .hb{height:20px;background:var(--track);margin:2px 0 10px}
 .hb i{display:block;height:100%}
-.sec{font-size:10px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;margin:12px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
+.sec{font-size:11px;color:var(--dim);margin:12px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
 .sec.first{border:0;margin-top:0;padding-top:0}
 
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) minmax(0,.9fr);gap:4px}
-.dw{font-size:11px;color:var(--dim);text-align:center;padding:4px 0;letter-spacing:.05em;text-transform:uppercase}
+.dw{font-size:12px;color:var(--dim);text-align:center;padding:4px 0}
 .cd{min-height:66px;padding:6px;border:1px solid var(--line);background:var(--raised);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:11px;letter-spacing:0;color:var(--dim);overflow:hidden}
 .cd b{font-size:12px}.cd em{font-style:normal;font-size:10px}
 .cd.we,.cd.off{background:repeating-linear-gradient(135deg,var(--raised) 0 6px,var(--border-soft) 6px 7px)}
@@ -99,7 +99,7 @@ button:hover,select:hover{border-color:var(--accent);color:var(--accent-text)}
 .gauge path.pick:hover{filter:brightness(1.3)}.gauge path.off,.chart .off{opacity:.25}
 .chart .hit{fill:transparent}.chart .hit.pick:hover{fill:var(--accent-soft)}
 .xf{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:-4px 0 12px}
-.xf span{color:var(--dim);font-size:11px;letter-spacing:.05em;text-transform:uppercase;margin-right:2px}
+.xf span{color:var(--dim);font-size:12px;margin-right:2px}
 .xf button{border-color:var(--accent);color:var(--accent-text);padding:5px 8px}.xf button b{font-weight:600}.xf .clr{border-color:var(--line2);color:var(--dim)}
 .nd{height:160px;display:grid;place-items:center;color:var(--dim);letter-spacing:.06em;font-size:11px}
 .radar{display:block;width:100%;max-width:230px;margin:0 auto}
@@ -110,7 +110,7 @@ button:hover,select:hover{border-color:var(--accent);color:var(--accent-text)}
 .tw{overflow-x:auto;position:relative}
 table{width:100%;min-width:980px;border-collapse:collapse}
 th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-th{font-size:11px;font-weight:500;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+th{font-size:12px;font-weight:500;color:var(--dim)}
 th.r,td.r{text-align:right}
 td button{padding:2px 7px;font-size:11px}
 footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:16px;font-size:11px;color:var(--dim)}
@@ -119,7 +119,7 @@ footer p{flex-basis:100%}
 
 dialog{background:var(--panel);color:var(--tx);border:1px solid var(--border-soft);padding:20px;width:min(560px,calc(100vw - 24px))}
 dialog::backdrop{background:var(--scrim)}
-dialog h3{margin:0 0 14px;font-size:13px;letter-spacing:.06em;color:var(--text-primary)}
+dialog h3{margin:0 0 14px;font-size:17px;font-weight:600;color:var(--text-primary)}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 /* an exercise's guide (exercises.js): the name opens it; two figures, primary muscles solid, secondary light */
 .exg-open{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;padding:12px 0;margin:-12px 0;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -144,10 +144,10 @@ dialog.ss .prw .exg-ib:focus-visible,.xl .xrw .exg-ib:focus-visible{outline:2px 
 .xl .exg-mini .exg-fig{height:32px}.xl button:has(.exg-mini){padding-top:6px;padding-bottom:6px}
 dialog.ss .prw .exg-mini{margin-right:6px}
 .exg-l{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px;line-height:1.45}
-.exg-l dt{padding-top:2px;color:var(--text-secondary);font-size:11px;letter-spacing:.05em;text-transform:uppercase}.exg-l dd{margin:0;color:var(--text-primary)}
+.exg-l dt{padding-top:2px;color:var(--text-secondary);font-size:12px}.exg-l dd{margin:0;color:var(--text-primary)}
 .pmr{display:flex;align-items:flex-end;gap:8px;min-width:0}.pmr label{flex:1;min-width:0}.pmr input{width:100%}
 .pmr .pm{flex:none;width:48px;height:44px;padding:0;font-size:20px;line-height:1}
-label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--dim)}
 label input,label select,label textarea,dialog textarea{width:100%;font-size:13px;letter-spacing:0;text-transform:none;color:var(--tx)}
 textarea{resize:vertical}
 .fa2{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-top:14px}
@@ -156,7 +156,7 @@ textarea{resize:vertical}
 dialog.rvd{width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 24px)}
 .rvh{display:flex;align-items:center;gap:8px;margin-bottom:6px}.rvh h3{margin:0;flex:1}
 .rv{border-top:1px solid var(--line);padding:14px 0 4px;font-size:14px;line-height:1.7}
-.rv h4{margin:0 0 6px;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.rv h4{margin:0 0 6px;font-size:12px;font-weight:500;color:var(--dim)}
 .rv p{margin:0 0 8px}.rv b{font-weight:600}.rv q{color:var(--dim);font-style:italic}
 .rv ol,.rv ul{margin:0 0 8px;padding-left:22px}.rv li{margin:0 0 6px}.rv li::marker{color:var(--dim)}
 .rv .tr{display:block;color:var(--dim);font-size:12px}
@@ -210,7 +210,7 @@ dialog.ss::backdrop{background:var(--scrim);-webkit-backdrop-filter:blur(8px);ba
 @keyframes ssIn{from{opacity:0;transform:translateY(32px)}}
 @keyframes ssFade{from{opacity:0;transform:translateY(6px)}}
 dialog.ss>*{display:flex;flex-direction:column;min-height:100%;max-width:520px;margin:0 auto;animation:ssFade .3s ease both}
-dialog.ss h3{align-self:center;text-align:center;font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--dim);margin:4px 0 24px}
+dialog.ss h3{align-self:center;text-align:center;font-size:13px;font-weight:600;color:var(--dim);margin:4px 0 24px}
 /* start screen: room to breathe, one family of chips, the action pinned to the bottom */
 dialog.ss .chips{gap:8px;margin:6px 0 20px}
 dialog.ss .chips button{padding:9px 12px}
@@ -262,7 +262,7 @@ dialog.ss .prw small{font-size:11px;color:var(--dim);overflow-wrap:anywhere}
 dialog.ss .prw button{flex:none;padding:7px 9px;font-size:10px;letter-spacing:.05em;background:none}
 dialog.ss .prw button:hover{border-color:var(--accent);color:var(--accent-text)}
 dialog.ss .pa{align-self:flex-start;margin:4px 0 14px;font-size:12px}
-dialog.ss .skd{margin:0 0 16px}dialog.ss .skd summary{cursor:pointer;font-size:11px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase;padding:6px 0}
+dialog.ss .skd{margin:0 0 16px}dialog.ss .skd summary{cursor:pointer;font-size:12px;color:var(--dim);padding:6px 0}
 dialog.ss .skd summary:focus-visible,dialog.ss .pa:focus-visible{outline:1px solid var(--accent);outline-offset:2px}
 h1.brand{margin:0}
 .cd.p,.cd.n{color:var(--tx)}.cd.p.now span,.cd.n.now span{color:var(--tx);text-decoration:underline;text-underline-offset:2px}
@@ -272,12 +272,12 @@ h1.brand{margin:0}
 <header class="top">
   <h1 class="brand">ISIONXXX TRAINING</h1>
   <div class="acts">
-    <button class="pri" data-a="go">&#9654; START</button>
-    <button data-a="add">+ LOG</button>
-    <button data-a="review" data-more>REVIEW</button>
-    <button data-a="note" data-more>NOTES</button>
-    <button data-a="imp" data-more>IMPORT</button>
-    <button data-a="set" data-more>SETTINGS</button>
+    <button class="pri" data-a="go">&#9654; Start</button>
+    <button data-a="add">+ Log</button>
+    <button data-a="review" data-more>Review</button>
+    <button data-a="note" data-more>Notes</button>
+    <button data-a="imp" data-more>Import</button>
+    <button data-a="set" data-more>Settings</button>
     <input id="file" type="file" accept=".csv,.json,text/csv,application/json" hidden>
   </div>
 </header>
@@ -497,7 +497,7 @@ function stats(T){
 }
 
 /* ---------- svg ---------- */
-const ARC='M12 62A50 50 0 0 1 112 62', ND='<div class="nd">NO DATA_</div>';
+const ARC='M12 62A50 50 0 0 1 112 62', ND='<div class="nd">No data</div>';
 // a segment can carry a cross-filter (f = 'key:value'): click it to filter, and it stays bright while the others dim
 function gauge(segs,label){
   let off=0;
@@ -519,7 +519,7 @@ function bodyHTML(t){
   return `<section class="g g21">
  <div class="card"><div class="rowh"><div><p class="h">Bodyweight</p><div class="k">From your morning check-in${W30.length>1?` · last ${W30.length}`:''}</div><div class="big">${last?`${n1(last.w)} ${S.wu}`:'—'}</div></div>
   <div class="eqs">${kv('7-day avg',w7?n1(w7):'—')}${kv('Change',old&&w7?`<span>${w7-old>0?'+':''}${n1(w7-old)}</span>`:'—')}${kv(t.mainName?esc(t.mainName)+' ÷ BW':'Lift ÷ BW',main&&last?(main/last.w).toFixed(2)+'×':'—')}</div></div>
-  ${W30.length>1?(()=>{const lo=Math.min(...W30.map(x=>x.w))*.99;return line(W30.map(x=>r2(x.w-lo)),'cg',i=>({title:`${dlabel(W30[i].d)}: ${n1(W30[i].w)} ${S.wu}`}))})():'<div class="nd">ADD YOUR WEIGHT AT CHECK-IN_</div>'}</div>
+  ${W30.length>1?(()=>{const lo=Math.min(...W30.map(x=>x.w))*.99;return line(W30.map(x=>r2(x.w-lo)),'cg',i=>({title:`${dlabel(W30[i].d)}: ${n1(W30[i].w)} ${S.wu}`}))})():'<div class="nd">Add your weight at check-in</div>'}</div>
  <div class="card"><p class="h">Recovery</p><div class="k">Today's check-in</div><div class="big ${rd[1]>0?'pos':rd[1]<0?'neg':''}">${today?`${today.sleep} h sleep`:'—'}</div>
   ${ev('Readiness',rd[0],rd[1])}
   ${ev('Sleep quality',today?CQ[today.q]:'—',today?(today.q>=4?1:today.q<=2?-1:0):0)}
@@ -558,7 +558,7 @@ function radar(ax){
   const cx=100,cy=92,R=68,ang=[-90,30,150].map(a=>a*Math.PI/180);
   const pt=(i,f)=>`${(cx+Math.cos(ang[i])*R*f).toFixed(1)},${(cy+Math.sin(ang[i])*R*f).toFixed(1)}`;
   const poly=(c,fs)=>`<polygon class="${c}" points="${fs.map((f,i)=>pt(i,f)).join(' ')}"/>`;
-  return `<svg class="radar" viewBox="0 0 200 160">${[.25,.5,.75,1].map(f=>poly('rg',[f,f,f])).join('')}${poly('rv',ax.map(v=>Math.max(v,3)/100))}<text x="100" y="14" text-anchor="middle">GAIN/DROP</text><text x="168" y="144" text-anchor="middle">PROG %</text><text x="30" y="144" text-anchor="middle">PF</text></svg>`;
+  return `<svg class="radar" viewBox="0 0 200 160">${[.25,.5,.75,1].map(f=>poly('rg',[f,f,f])).join('')}${poly('rv',ax.map(v=>Math.max(v,3)/100))}<text x="100" y="14" text-anchor="middle">Gain/drop</text><text x="168" y="144" text-anchor="middle">Prog %</text><text x="30" y="144" text-anchor="middle">PF</text></svg>`;
 }
 
 /* ---------- render ---------- */
@@ -593,7 +593,7 @@ function calendar(){
   <div class="rowh"><div><p class="h">Training calendar</p><div class="k">Avg strength change per exercise, this month</div><div class="big ${cls(tot)}">${pc(tot,1)}</div></div>
    <div>Stronger: <b class="pos">${wd}</b> &nbsp; Weaker: <b class="neg">${ld}</b></div></div>
   <div class="cal">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
-  <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">TODAY</button></div>
+  <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">Today</button></div>
    <span class="dim">${td} training day${td===1?'':'s'} · ${nT} entr${nT===1?'y':'ies'}</span></div></div>`;
 }
 
@@ -611,8 +611,8 @@ function table(T){
    <td class="r">${c?+e.dist.toFixed(2)+' '+S.du:na}</td><td>${c?dur(e.mins*60):na}</td><td class="r">${e.rpe??na}</td>
    <td class="r">${perfT(e)}</td>
    <td class="r">${e.d==null?`<span class="dim">${e.base?'BASE':'—'}</span>`:`<b class="${cls(e.d)}">${pc(e.d,1)}</b>`}</td>
-   <td class="r">${e.note?`<span class="amb" title="${esc(e.note)}">*</span> `:''}<button data-a="edit" data-v="${e.id}">EDIT</button> <button data-a="del" data-v="${e.id}" aria-label="Delete entry">X</button></td></tr>`}).join('');
-  return `<div class="card"><div class="rowh"><p class="h">Log</p><button data-a="csv">EXPORT CSV</button></div>
+   <td class="r">${e.note?`<span class="amb" title="${esc(e.note)}">*</span> `:''}<button data-a="edit" data-v="${e.id}">Edit</button> <button data-a="del" data-v="${e.id}" aria-label="Delete entry">X</button></td></tr>`}).join('');
+  return `<div class="card"><div class="rowh"><p class="h">Log</p><button data-a="csv">Export CSV</button></div>
   <div class="tw" tabindex="0" role="region" aria-label="Table"><table><thead><tr><th>${F.th(0)}</th><th>${F.th(1)}</th><th>${F.th(2)}</th><th class="r">${F.th(3)}</th><th class="r">${F.th(4)}</th><th class="r">${F.th(5)}</th><th class="r">${F.th(6)}</th><th>${F.th(7)}</th><th class="r">${F.th(8)}</th><th class="r">${F.th(9)}</th><th class="r">${F.th(10)}</th><th><span class="ui-sr">Actions</span></th></tr></thead>
   <tbody>${body||'<tr><td colspan="12" class="dim">No entries in this view_</td></tr>'}</tbody></table></div>
   <div class="calf"><div><button data-a="pp">&lt;</button> Page <b>${U.page+1}</b> of ${pages} <button data-a="pn">&gt;</button></div><span class="dim">${rows.length} record${rows.length===1?'':'s'}${F.clear()}</span></div></div>`;
@@ -676,7 +676,7 @@ function render(){
   const push=t.G.PUSH?.sets||0,pull=t.G.PULL?.sets||0,lift=push+pull+(t.G.LEGS?.sets||0);
 
   UI.paint($('#top'),heroToday(),{now:true});
-  UI.paint($('#app'),`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample year to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
+  UI.paint($('#app'),`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample year to see how it reads.</p><button class="pri" data-a="go">&#9654; Start</button> <button data-a="add">+ Log</button> <button data-a="imp">Import</button> <button data-a="sample">Load sample</button></div>`}
 <section class="g g4">
  <div class="card"><p class="h">Workouts</p><div class="k">This week</div><div class="big ${tk.wkDays>=S.goal?'pos':''}">${tk.wkDays} / ${S.goal}</div>
   ${gauge([[Math.min(1,tk.wkDays/S.goal),'sg','',`This week: ${tk.wkDays} of ${S.goal} workouts`]],pct(tk.wkDays,S.goal))}
@@ -724,7 +724,7 @@ ${table(T)}
 function entryForm(t){
   const d=t||{ex:'',type:'W',at:Date.now(),sets:3,reps:5,load:'',dist:'',mins:'',rpe:'',note:''};
   const names=[...new Set([...S.log.map(x=>x.ex.trim()),...PRESET])];
-  dlg.innerHTML=`<form id="tf"><h3>${t?'EDIT':'NEW'} ENTRY</h3>
+  dlg.innerHTML=`<form id="tf"><h3>${t?'Edit':'New'} entry</h3>
   <div class="fgrid">
    <label>Exercise<input name="ex" list="exs" required autocomplete="off" placeholder="Back Squat" value="${esc(d.ex)}"></label>
    <label>Type<select name="type">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}"${k===d.type?' selected':''}>${v}</option>`).join('')}</select></label>
@@ -738,7 +738,7 @@ function entryForm(t){
   </div>
   <label>Note<textarea name="note" rows="3">${esc(d.note||'')}</textarea></label>
   <datalist id="exs">${names.map(a=>`<option value="${esc(a)}">`).join('')}</datalist>
-  <div class="fa2"><span id="pv"></span><button type="button" data-a="x">CANCEL</button><button class="pri">SAVE</button></div></form>`;
+  <div class="fa2"><span id="pv"></span><button type="button" data-a="x">Cancel</button><button class="pri">Save</button></div></form>`;
   const f=$('#tf'),e=f.elements;
   const read=()=>{const ty=e.type.value,c=ty==='C';return {ex:e.ex.value.trim(),type:ty,at:new Date(e.when.value).getTime(),
     sets:c?0:Math.round(+e.sets.value)||0,reps:c?0:Math.round(+e.reps.value)||0,load:ty==='W'?dn(e.load.value):0,
@@ -801,6 +801,8 @@ async function wake(on){try{if(on&&!WL){WL=await navigator.wakeLock?.request('sc
 const roll=()=>{if(RD!==ymd(new Date()))render()};setInterval(roll,6e4);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(R)wake(true);roll()});
 // where the bubble is at ms into the rest: cue, seconds left in the phase, scale (.45 empty – 1 full)
+// what the pacer shows for each cue (the cues themselves are keys)
+const CUE={INHALE:'Inhale',EXHALE:'Exhale',HOLD:'Hold','TOP UP':'Top up'};
 function breath(ms){
   const P=PACE[R.pat]||PACE['Calm 4-6'];let x=ms/1000%P.reduce((a,p)=>a+p[1],0),s=.45;
   for(const[c,d]of P){
@@ -830,7 +832,7 @@ function nextSet(x){
 }
 const item=ex=>({ex,type:xtype(ex)||'W',sets:[],t0:null,acc:0,dist:'',at:null});
 // the STRETCH day is called MOBILITY on screen
-const DN=d=>d==='STRETCH'?'MOBILITY':d;
+const DN=d=>GN(d==='STRETCH'?'MOBILITY':d);
 // today's workout is generated: PUSH > PULL > LEGS > CARDIO > MOBILITY, one exercise per slot. A lifting day's main lift
 // alternates between two; every other slot (and the cooldown) rotates through its whole list, so each exercise comes
 // round before any repeats. Every LIB exercise sits in exactly one slot of its day; Core (PULL's library) also closes
@@ -905,7 +907,7 @@ function startForm(){
   const P=pref(),nx=nextDay();
   let D=nx.day,pl=plan(D),add=false;
   const ago=d=>{const n=Math.round((pd(ymd(new Date()))-pd(d))/864e5);return n===0?'today':n===1?'yesterday':n<7?pd(d).toLocaleDateString('en-US',{weekday:'long'}):pd(d).toLocaleDateString('en-US',{month:'short',day:'numeric'})};
-  dlg.innerHTML=`<form id="sf"><h3>TODAY'S WORKOUT</h3>
+  dlg.innerHTML=`<form id="sf"><h3>Today's workout</h3>
   <div class="seg" id="dy">${DAYS.map(d=>`<button type="button" data-d="${d}">${DN(d)}</button>`).join('')}</div>
   <p class="pv" id="pt"></p><p class="dim pw" id="pw"></p>
   <div class="plan" id="pl"></div>
@@ -916,23 +918,23 @@ function startForm(){
    <label>Rest between sets<select name="rest">${RESTS.map(r=>`<option value="${r}"${r===(P.rest||90)?' selected':''}>${fm(r/60)}</option>`).join('')}</select></label>
    <label>Breathing during rest<select name="pat">${Object.keys(PACE).map(k=>`<option${k===(P.pat||'Calm 4-6')?' selected':''}>${k}</option>`).join('')}</select></label>
   </div>
-  <div class="fa2"><span class="dim" id="cnt"></span><button type="button" class="ghost" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
+  <div class="fa2"><span class="dim" id="cnt"></span><button type="button" class="ghost" data-a="x">Cancel</button><button class="pri">Begin</button></div></form>`;
   const f=$('#sf'),lab=p=>p.s==null?'Added':SLOTS[D][p.s][0];
   const paint=focus=>{
     f.querySelectorAll('[data-d]').forEach(b=>{b.classList.toggle('on',b.dataset.d===D);b.setAttribute('aria-pressed',b.dataset.d===D)});
     const lifts=pl.filter(p=>xtype(p.ex)!=='S').length,st=pl.length-lifts;
-    $('#pt').textContent=`${DN(D)} DAY · ${pl.length} exercise${pl.length===1?'':'s'}`;
-    $('#pw').textContent=[D===nx.day?(nx.on?`Next after ${ago(nx.on)}'s ${DN(nx.after)}`:'First session · the cycle starts with PUSH'):`You picked ${DN(D)} · up next was ${DN(nx.day)}`,
+    $('#pt').textContent=`${DN(D)} day · ${pl.length} exercise${pl.length===1?'':'s'}`;
+    $('#pw').textContent=[D===nx.day?(nx.on?`Next after ${ago(nx.on)}'s ${DN(nx.after)}`:'First session · the cycle starts with Push'):`You picked ${DN(D)} · up next was ${DN(nx.day)}`,
       D==='STRETCH'?'one hold per area':lifts&&st?`${lifts} ${D==='CARDIO'?'cardio':'lifts'} + ${st} stretch${st===1?'':'es'}`:''].filter(Boolean).join(' · ');
     $('#pl').innerHTML=pl.length?pl.map((p,i)=>`<div class="prw">${window.EXG?.mini(p.ex)||''}<div><b>${esc(p.ex)}${window.EXG?.get(p.ex)?`<button type="button" class="exg-ib" data-g="${i}" aria-label="${esc(p.ex)}: the muscles it works and how to do it"><span class="exg-i" aria-hidden="true">i</span></button>`:''}</b><small>${esc(lab(p))} · ${S.log.some(e=>exk(e.ex)===exk(p.ex))?esc(lastTxt(p.ex)):'New to you'}</small></div>
-      ${p.s==null?'':`<button type="button" data-sw="${i}" aria-label="Swap ${esc(p.ex)}">SWAP</button>`}<button type="button" data-sk="${i}" aria-label="${p.s==null?'Remove':'Skip'} ${esc(p.ex)}">${p.s==null?'REMOVE':'SKIP'}</button></div>`).join('')
+      ${p.s==null?'':`<button type="button" data-sw="${i}" aria-label="Swap ${esc(p.ex)}">Swap</button>`}<button type="button" data-sk="${i}" aria-label="${p.s==null?'Remove':'Skip'} ${esc(p.ex)}">${p.s==null?'Remove':'Skip'}</button></div>`).join('')
       :'<p class="dim">Nothing left to pick here. Restore a skipped exercise or add one.</p>';
     const G=D==='STRETCH'?Object.entries(STRETCHES):Object.entries(LIB[D]).map(([t,L])=>[t==='S'?'Stretch · cooldown':TYPES[t],L]),on=x=>pl.some(p=>exk(p.ex)===exk(x));
-    if(add)$('#xs').innerHTML=`<div class="chips"><input id="xn" list="exl" placeholder="Any exercise" aria-label="Add any exercise" style="flex:1"><button type="button" id="xk">ADD</button>
+    if(add)$('#xs').innerHTML=`<div class="chips"><input id="xn" list="exl" placeholder="Any exercise" aria-label="Add any exercise" style="flex:1"><button type="button" id="xk">Add</button>
       <datalist id="exl">${[...new Set([...S.log.map(e=>e.ex.trim()),...PRESET])].map(a=>`<option value="${esc(a)}">`).join('')}</datalist></div>`+
       G.map(([t,L])=>`<p class="k">${t}</p><div class="vl multi">${L.map(x=>`<button type="button" data-e="${esc(x)}"${on(x)?' class="on"':''} aria-pressed="${on(x)}">${esc(x)}</button>`).join('')}</div>`).join('');
     const sk=S.skip||[];
-    $('#sk').innerHTML=sk.length?`<details class="skd"><summary>Skipped (${sk.length})</summary><div class="plan">${sk.map((x,i)=>`<div class="prw"><div><b>${esc(x)}</b></div><button type="button" data-rs="${i}" aria-label="Restore ${esc(x)}">RESTORE</button></div>`).join('')}</div></details>`:'';
+    $('#sk').innerHTML=sk.length?`<details class="skd"><summary>Skipped (${sk.length})</summary><div class="plan">${sk.map((x,i)=>`<div class="prw"><div><b>${esc(x)}</b></div><button type="button" data-rs="${i}" aria-label="Restore ${esc(x)}">Restore</button></div>`).join('')}</div></details>`:'';
     $('#cnt').textContent='';
     if(focus)(f.querySelector(focus)||f.querySelector('[data-sk]:last-of-type')||$('#pa')).focus();
   };
@@ -980,23 +982,23 @@ function draw(){
 function workView(){
   const x=R.list[R.cur],C=x.type==='C',H=x.type==='S',ns=nextSet(x);
   const tab=(y,i)=>`<div class="xrw"><button type="button" data-x="${i}" class="${i===R.cur?'on':''}${y.sets.length||cms(y)?' dn':''}">${window.EXG?.mini(y.ex)||''}${esc(y.ex)}<em>${y.type==='C'?(cms(y)?fm(cms(y)/60000):'—'):`${y.sets.length} ${y.type==='S'?'hold':'set'}${y.sets.length===1?'':'s'}`}</em></button>${window.EXG?.get(y.ex)?`<button type="button" class="exg-ib" data-g="${i}" aria-label="${esc(y.ex)}: the muscles it works and how to do it"><span class="exg-i" aria-hidden="true">i</span></button>`:''}</div>`;
-  dlg.innerHTML=`<div><h3>${DN(R.day)} DAY <span class="dim" id="wt"></span></h3>
+  dlg.innerHTML=`<div><h3>${DN(R.day)} day <span class="dim" id="wt"></span></h3>
   <div class="xl">${R.list.map(tab).join('')}<button type="button" id="xa">Add exercise<em>+</em></button></div>
-  <div id="xr" class="chips" hidden><input id="xn" list="exs" placeholder="Exercise" autocomplete="off" style="flex:1;width:auto"><button type="button" id="xk">ADD</button>
+  <div id="xr" class="chips" hidden><input id="xn" list="exs" placeholder="Exercise" autocomplete="off" style="flex:1;width:auto"><button type="button" id="xk">Add</button>
    <datalist id="exs">${[...new Set([...S.log.map(e=>e.ex.trim()),...PRESET])].map(a=>`<option value="${esc(a)}">`).join('')}</datalist></div>
   <p class="h">${window.EXG?.get(x.ex)?`<button type="button" class="exg-open" id="xi" aria-label="${esc(x.ex)}: the muscles it works and how to do it">${esc(x.ex)}<span class="exg-i" aria-hidden="true">i</span></button>`:esc(x.ex)}</p><p class="dim">${lastTxt(x.ex)}</p>
   ${C?`<div class="bigclk" id="cc"></div>
-  <div class="fgrid"><label>Distance (${S.du})<input id="cd" inputmode="decimal" autocomplete="off" value="${esc(x.dist)}"></label><button type="button" class="${x.t0?'':'pri'}" id="cs" style="align-self:end">${x.t0?'PAUSE':cms(x)?'RESUME':'START'}</button></div>`
+  <div class="fgrid"><label>Distance (${S.du})<input id="cd" inputmode="decimal" autocomplete="off" value="${esc(x.dist)}"></label><button type="button" class="${x.t0?'':'pri'}" id="cs" style="align-self:end">${x.t0?'Pause':cms(x)?'Resume':'Start'}</button></div>`
   :H?`<ol class="sets">${x.sets.map((s,j)=>`<li>${s.reps}s hold <button type="button" data-s="${j}" aria-label="Remove hold">X</button></li>`).join('')}</ol>
   <p class="k">Hold (seconds)</p>
   <div class="chips" id="hc">${HOLDS.map(h=>`<button type="button" data-h="${h}"${h===ns.reps?' class="on"':''}>${h}</button>`).join('')}<input id="ih" type="number" inputmode="numeric" min="5" step="5" value="${ns.reps}" aria-label="Seconds"></div>
-  <button type="button" class="pri" id="hs" style="width:100%">START HOLD ${x.sets.length+1}</button>
+  <button type="button" class="pri" id="hs" style="width:100%">Start hold ${x.sets.length+1}</button>
   <p class="dim" style="margin-top:8px">Each side counts as one hold. Ease into mild tension and breathe; never stretch into pain. <button type="button" class="lnk" id="hl">Log without timer</button></p>`
   :`<ol class="sets">${x.sets.map((s,j)=>`<li>${s.reps} ${x.type==='W'?`× ${n1(s.load)}${unit(x)}`:'reps'} <button type="button" data-s="${j}" aria-label="Remove set">X</button></li>`).join('')}</ol>
   <div class="fgrid"><div class="pmr">${pmb('ir',-1,'1 rep fewer')}<label>Reps<input id="ir" type="number" inputmode="numeric" min="1" step="1" value="${ns.reps||''}"></label>${pmb('ir',1,'1 rep more')}</div>
    ${x.type==='W'?`<div class="pmr">${pmb('il',-LS(),`${LS()} ${S.wu} less`)}<label>Load (${S.wu})<input id="il" inputmode="decimal" autocomplete="off" value="${ns.load??''}"></label>${pmb('il',LS(),`${LS()} ${S.wu} more`)}</div>`:''}</div>
-  <button type="button" class="pri" id="ls" style="width:100%">LOG SET ${x.sets.length+1} · REST ${fm(R.restSec/60)}</button>`}
-  <div class="fa2"><button type="button" class="ghost" id="rd">DISCARD</button>${R.cur<R.list.length-1?'<button type="button" id="nx">NEXT &gt;</button>':''}<button type="button" class="pri" id="fn">FINISH</button></div></div>`;
+  <button type="button" class="pri" id="ls" style="width:100%">Log set ${x.sets.length+1} · rest ${fm(R.restSec/60)}</button>`}
+  <div class="fa2"><button type="button" class="ghost" id="rd">Discard</button>${R.cur<R.list.length-1?'<button type="button" id="nx">NEXT &gt;</button>':''}<button type="button" class="pri" id="fn">Finish</button></div></div>`;
   const tick=()=>{$('#wt').textContent='· '+fm((Date.now()-R.start)/60000);if(C)$('#cc').textContent=fm(cms(x)/60000)};
   tick();RI=setInterval(tick,250);
   dlg.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{R.cur=+b.dataset.x;keepRun();draw()});
@@ -1031,24 +1033,24 @@ function workView(){
 // (or Escape, or a tap outside), so you're back exactly where you were and a workout's clock never stops.
 function guide(name,type){
   const d=$('#gd');if(!window.EXG?.get(name)||!d)return;
-  d.innerHTML=`<h3 id="gdt">${esc(name).toUpperCase()}</h3>${EXG.html(name,type||xtype(name))}
-  <div class="fa2"><button type="button" class="pri" data-gx style="flex:1">DONE</button></div>`;
+  d.innerHTML=`<h3 id="gdt">${esc(name)}</h3>${EXG.html(name,type||xtype(name))}
+  <div class="fa2"><button type="button" class="pri" data-gx style="flex:1">Done</button></div>`;
   d.onclick=e=>{if(e.target===d||e.target.closest('[data-gx]'))d.close()};
   d.showModal();d.querySelector('[data-gx]').focus();
 }
 function restView(){
   const x=R.list[R.cur];
-  dlg.innerHTML=`<div><h3>REST · ${esc(x.ex).toUpperCase()} · SET ${x.sets.length} DONE</h3>
+  dlg.innerHTML=`<div><h3>Rest · ${esc(x.ex)} · set ${x.sets.length} done</h3>
   <div class="bub" id="bub"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="rt" cx="120" cy="120" r="118"/><circle class="rp" id="pg" cx="120" cy="120" r="118" pathLength="100" stroke-dasharray="0 100"/></svg>
    <div class="ball" id="ball"></div><div class="cue" id="pc" aria-live="polite"></div></div>
   <div class="clock" id="clk"></div><p class="dim c">${R.pat} · ends with a chime</p>
-  <div class="fa2"><button type="button" id="r30">+30s</button><button type="button" class="pri" id="rs">SKIP REST</button></div></div>`;
+  <div class="fa2"><button type="button" id="r30">+30s</button><button type="button" class="pri" id="rs">Skip rest</button></div></div>`;
   const el=()=>Date.now()-R.rest.t0;
   const done=()=>{R.rest=null;keepRun();draw()};
   const tick=()=>{
     const left=R.rest.len-el()/1000;if(left<=0){chime();navigator.vibrate?.([200,120,200]);return done()}
     $('#clk').textContent=fm(left/60);$('#pg').setAttribute('stroke-dasharray',`${(el()/10/R.rest.len).toFixed(2)} 100`);
-    const b=breath(el());$('#pc').innerHTML=`${b.c}<em>${b.left}</em>`;
+    const b=breath(el());$('#pc').innerHTML=`${CUE[b.c]||b.c}<em>${b.left}</em>`;
   };
   // the bubble moves every frame; the clock and cue only need a few updates a second
   const anim=()=>{const b=$('#ball');if(!R||!R.rest||!b)return;b.style.transform=`scale(${breath(el()).s.toFixed(3)})`;RA=requestAnimationFrame(anim)};
@@ -1059,17 +1061,17 @@ function restView(){
 }
 function holdView(){
   const x=R.list[R.cur];
-  dlg.innerHTML=`<div><h3>HOLD · ${esc(x.ex).toUpperCase()} · ${x.sets.length+1}</h3>
+  dlg.innerHTML=`<div><h3>Hold · ${esc(x.ex)} · ${x.sets.length+1}</h3>
   <div class="bub" id="bub"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="rt" cx="120" cy="120" r="118"/><circle class="rp" id="pg" cx="120" cy="120" r="118" pathLength="100" stroke-dasharray="0 100"/></svg>
    <div class="ball" id="ball"></div><div class="cue" id="pc" aria-live="polite"></div></div>
   <div class="clock" id="clk"></div><p class="dim c">Breathe into the stretch · ${R.pat}</p>
-  <div class="fa2"><button type="button" class="ghost" id="hx">CANCEL</button><button type="button" id="h15">+15s</button><button type="button" class="pri" id="hd">DONE</button></div></div>`;
+  <div class="fa2"><button type="button" class="ghost" id="hx">Cancel</button><button type="button" id="h15">+15s</button><button type="button" class="pri" id="hd">Done</button></div></div>`;
   const el=()=>Date.now()-R.hold.t0;
   const log=secs=>{x.sets.push({reps:secs,load:0,at:R.hold.t0});R.hold=null;keepRun();draw()};
   const tick=()=>{
     const left=R.hold.len-el()/1000;if(left<=0){chime();navigator.vibrate?.([200,120,200]);return log(R.hold.len)}
     $('#clk').textContent=fm(left/60);$('#pg').setAttribute('stroke-dasharray',`${(el()/10/R.hold.len).toFixed(2)} 100`);
-    const b=breath(el());$('#pc').innerHTML=`${b.c}<em>${b.left}</em>`;
+    const b=breath(el());$('#pc').innerHTML=`${CUE[b.c]||b.c}<em>${b.left}</em>`;
   };
   const anim=()=>{const b=$('#ball');if(!R||!R.hold||!b)return;b.style.transform=`scale(${breath(el()).s.toFixed(3)})`;RA=requestAnimationFrame(anim)};
   RA=requestAnimationFrame(anim);
@@ -1091,12 +1093,12 @@ function entries(){
 }
 function finishView(){
   const E=entries(),tv=E.reduce((a,e)=>a+vol(e),0),sets=E.reduce((a,e)=>a+e.sets,0);
-  dlg.innerHTML=`<form id="ff"><h3>${DN(R.day)} DAY DONE · ${fm((Date.now()-R.start)/60000)}</h3>
+  dlg.innerHTML=`<form id="ff"><h3>${DN(R.day)} day done · ${fm((Date.now()-R.start)/60000)}</h3>
   <div class="tw" tabindex="0" role="region" aria-label="Table"><table class="sm" style="min-width:0"><tbody>${E.map(e=>`<tr><td>${esc(e.ex)}</td><td class="r">${e.type==='C'?`${n1(e.dist)} ${S.du} · ${fm(e.mins)}`:`${e.sets}×${e.reps}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:e.type==='S'?'s':''}`}</td></tr>`).join('')||'<tr><td class="dim">Nothing logged yet_</td></tr>'}</tbody></table></div>
   <p class="dim" style="margin:10px 0">${sets} sets${tv?` · ${n0(tv)} ${S.wu} volume`:''}</p>
   <div class="fgrid"><label>Session RPE (1–10)<input name="rpe" type="number" min="1" max="10" step="0.5"></label></div>
   <label>Note<textarea name="note" rows="3" placeholder="Sleep. Energy. What moved well."></textarea></label>
-  <div class="fa2"><button type="button" class="ghost" id="bk">&lt; BACK</button><button class="pri"${E.length?'':' disabled'}>SAVE</button></div></form>`;
+  <div class="fa2"><button type="button" class="ghost" id="bk">&lt; BACK</button><button class="pri"${E.length?'':' disabled'}>Save</button></div></form>`;
   $('#bk').onclick=()=>{R.fin=false;keepRun();draw()};
   $('#ff').addEventListener('submit',ev=>{
     ev.preventDefault();const el=ev.target.elements,rpe=el.rpe.value===''?null:+el.rpe.value,note=el.note.value.trim();
@@ -1105,8 +1107,8 @@ function finishView(){
   });
 }
 function noteForm(day){
-  dlg.innerHTML=`<form id="nf"><h3>NOTES · ${dlabel(day)}</h3><textarea name="n" rows="10" placeholder="Sleep. Energy. What moved well. What to change.">${esc(S.notes[day]||'')}</textarea>
-  <div class="fa2"><button type="button" data-a="x">CANCEL</button><button class="pri">SAVE</button></div></form>`;
+  dlg.innerHTML=`<form id="nf"><h3>Notes · ${dlabel(day)}</h3><textarea name="n" rows="10" placeholder="Sleep. Energy. What moved well. What to change.">${esc(S.notes[day]||'')}</textarea>
+  <div class="fa2"><button type="button" data-a="x">Cancel</button><button class="pri">Save</button></div></form>`;
   $('#nf').addEventListener('submit',ev=>{ev.preventDefault();const v=ev.target.elements.n.value.trim();if(v)S.notes[day]=v;else delete S.notes[day];save();dlg.close();render()});
   dlg.showModal();
 }
@@ -1231,7 +1233,7 @@ function rvDefault(){
 // the kind of session, for "same kind" comparisons: its lifting groups (PUSH, PULL, LEGS), else the cardio done, else stretching
 function rvKind(E){
   const G=PPL.filter(g=>E.some(e=>grp(e)===g)),C=[...new Set(E.filter(e=>e.type==='C').map(e=>e.ex.trim()))].sort();
-  return G.length?{k:G.join(' + '),t:`${G.join(' + ')} day`}:E.some(e=>grp(e)==='OTHER')?{k:'LIFT',t:'lifting session'}:C.length?{k:'C:'+C.map(exk).join('|'),t:`${C.join(' and ')} session`,c:1}:{k:'S',t:'stretch session'};
+  return G.length?{k:G.join(' + '),t:`${G.map(GN).join(' + ')} day`}:E.some(e=>grp(e)==='OTHER')?{k:'LIFT',t:'lifting session'}:C.length?{k:'C:'+C.map(exk).join('|'),t:`${C.join(' and ')} session`,c:1}:{k:'S',t:'stretch session'};
 }
 function review(day){
   const A=scored().filter(rvIn),T=A.filter(e=>e.day===day),D={};A.forEach(e=>(D[e.day]??=[]).push(e));
@@ -1316,10 +1318,10 @@ function reviewForm(day){
   const D=rvDays();if(!D.length)return toast('No workouts to review yet');
   day=D.includes(day)?day:rvDefault();const i=D.indexOf(day);
   dlg.classList.add('rvd');dlg.addEventListener('close',()=>dlg.classList.remove('rvd'),{once:true});
-  dlg.innerHTML=`<div class="rvh"><h3>DAILY REVIEW · ${dlabel(day).toUpperCase()}</h3>
+  dlg.innerHTML=`<div class="rvh"><h3>Daily review · ${dlabel(day)}</h3>
     <button type="button" data-a="rvgo" data-v="${D[i-1]||''}" ${i>0?'':'disabled'} aria-label="Previous training day">&lt;</button><button type="button" data-a="rvgo" data-v="${D[i+1]||''}" ${i<D.length-1?'':'disabled'} aria-label="Next training day">&gt;</button></div>
     <div id="rvb">${review(day)}</div>
-    <div class="fa2"><span><button type="button" data-a="rvcopy">COPY</button></span><button type="button" data-a="rvnote" data-v="${day}">WRITE NOTES</button><button type="button" class="pri" data-a="x">DONE</button></div>`;
+    <div class="fa2"><span><button type="button" data-a="rvcopy">Copy</button></span><button type="button" data-a="rvnote" data-v="${day}">Write notes</button><button type="button" class="pri" data-a="x">Done</button></div>`;
   if(!dlg.open)dlg.showModal();
   dlg.querySelector('#rvb').scrollTop=0;dlg.scrollTop=0;
 }
@@ -1330,16 +1332,16 @@ function reviewText(){
     ...[...x.children].slice(1).map(el=>el.matches('ol,ul')?[...el.children].map((li,i)=>`${el.matches('ol')?i+1+'.':'-'} ${li.textContent.replace(/\s+/g,' ').trim()}`).join('\n'):el.textContent.trim())].join('\n'))].join('\n\n');
 }
 function settingsForm(){
-  dlg.innerHTML=`<h3>SETTINGS</h3>
+  dlg.innerHTML=`<h3>Settings</h3>
   <div class="ui-set">
     <div><span><b>Weekly goal</b><small>Workouts a week</small></span><select data-f="goal" aria-label="Workouts per week">${[2,3,4,5,6].map(v=>`<option value="${v}"${v===S.goal?' selected':''}>${v} workouts</option>`).join('')}</select></div>
     <div><span><b>Units</b><small>Load and distance</small></span><span class="ui-set-btns"><select data-f="wu" aria-label="Load unit">${['lb','kg'].map(u=>`<option${u===S.wu?' selected':''}>${u}</option>`).join('')}</select><select data-f="du" aria-label="Distance unit">${['mi','km'].map(u=>`<option${u===S.du?' selected':''}>${u}</option>`).join('')}</select></span></div>
     ${UI.appearance()}
-    <div><span><b>Sync</b><small>${window.ISXSync?.state==='ok'?'On · this app syncs across your devices':'Keep every app the same on all your devices'}</small></span><span class="ui-set-btns"><button type="button" data-a="sync">SYNC…</button></span></div>
-    <div><span><b>Backup</b><small>Saved on this device. Download a copy, or restore one.</small></span><span class="ui-set-btns"><button type="button" data-a="bak">BACKUP JSON</button><button type="button" data-a="imp">RESTORE</button></span></div>
-    <div><span><b>Delete everything</b><small>Removes all of this app's data on this device.</small></span><span class="ui-set-btns"><button type="button" class="ui-danger" data-a="clear">CLEAR ALL</button></span></div>
+    <div><span><b>Sync</b><small>${window.ISXSync?.state==='ok'?'On · this app syncs across your devices':'Keep every app the same on all your devices'}</small></span><span class="ui-set-btns"><button type="button" data-a="sync">Sync…</button></span></div>
+    <div><span><b>Backup</b><small>Saved on this device. Download a copy, or restore one.</small></span><span class="ui-set-btns"><button type="button" data-a="bak">Back up JSON</button><button type="button" data-a="imp">Restore</button></span></div>
+    <div><span><b>Delete everything</b><small>Removes all of this app's data on this device.</small></span><span class="ui-set-btns"><button type="button" class="ui-danger" data-a="clear">Clear all</button></span></div>
   </div>
-  <div class="fa2"><button type="button" class="pri" data-a="x">DONE</button></div>`;
+  <div class="fa2"><button type="button" class="pri" data-a="x">Done</button></div>`;
   dlg.showModal();
 }
 const ACT={
