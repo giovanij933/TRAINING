@@ -371,7 +371,7 @@ const sheet=()=>dlg.classList.add('ss');
 // focus goes back to what opened the dialog, but a save redraws it (a log row's EDIT, the Today card's START): then its
 // new copy, else START, instead of the top of the page
 let opener=null;
-dlg.addEventListener('close',()=>{dlg.classList.remove('ss');const o=opener;opener=null;setTimeout(()=>{if(dlg.open||document.activeElement&&document.activeElement!==document.body)return;
+dlg.addEventListener('close',()=>{dlg.classList.remove('ss');ORB?.drop();ORB=null;const o=opener;opener=null;setTimeout(()=>{if(dlg.open||document.activeElement&&document.activeElement!==document.body)return;
   const a=o?.dataset.a,v=o?.dataset.v,t=a&&document.querySelector(`[data-a="${a}"]${v?`[data-v="${CSS.escape(v)}"]`:''}`);(t?.offsetParent?t:$('[data-a=go]')).focus({preventScroll:true})})});
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -774,7 +774,7 @@ function entryForm(t){
    per exercise (consecutive identical sets are grouped, so a top set plus back-offs stay separate rows).
    The workout lives in localStorage, so a sleeping screen or a reload doesn't lose it. */
 const DAYS=['PUSH','PULL','LEGS','CARDIO','STRETCH'],PPL=DAYS.slice(0,3),RESTS=[60,90,120,180],HOLDS=[20,30,45,60];
-let R=null,RI=0,RA=0,WL=null,AC=null;
+let R=null,RI=0,RA=0,WL=null,AC=null,ORB=null;
 try{R=JSON.parse(localStorage.getItem(RUN))}catch(e){}
 // a saved workout that isn't one (corrupted, or from an old version) is dropped instead of breaking the start
 if(!(Array.isArray(R?.list)&&R.list.length&&R.list.every(x=>typeof x?.ex==='string'&&Array.isArray(x.sets))))R=null;else R.cur=Math.min(R.list.length-1,Math.max(0,R.cur|0));
@@ -812,7 +812,7 @@ function breath(ms){
   }
   return {c:'',left:0,s};
 }
-function clearRun(){AWAY=false;window.UI?.runBar?.(null);clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}window.UI?.replan?.();wake(false)}
+function clearRun(){ORB?.drop();ORB=null;AWAY=false;window.UI?.runBar?.(null);clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}window.UI?.replan?.();wake(false)}
 const cms=x=>x.acc+(x.t0?Date.now()-x.t0:0);
 const unit=x=>x.type==='W'?' '+S.wu:'';
 // what you did the last day you trained this exercise, e.g. "3×5 @ 100 lb · 1×8 @ 80 lb"
@@ -974,7 +974,7 @@ function startForm(){
 }
 
 function draw(){
-  clearInterval(RI);cancelAnimationFrame(RA);
+  clearInterval(RI);cancelAnimationFrame(RA);ORB?.drop();ORB=null;
   if(R.fin)finishView();else if(R.hold)holdView();else if(R.rest)restView();else workView();
   sheet();if(AWAY)return;window.UI?.runBar?.(null);if(!dlg.open)dlg.showModal();
   wake(true);
@@ -1053,8 +1053,10 @@ function restView(){
     const b=breath(el());$('#pc').innerHTML=`${CUE[b.c]||b.c}<em>${b.left}</em>`;
   };
   // the bubble moves every frame; the clock and cue only need a few updates a second
-  const anim=()=>{const b=$('#ball');if(!R||!R.rest||!b)return;b.style.transform=`scale(${breath(el()).s.toFixed(3)})`;RA=requestAnimationFrame(anim)};
+  const anim=()=>{const b=$('#ball');if(!R||!R.rest||!b)return;const s=breath(el()).s;b.style.transform=`scale(${s.toFixed(3)})`;ORB?.level(s,Math.max(0,1-el()/1000/R.rest.len));RA=requestAnimationFrame(anim)};
   RA=requestAnimationFrame(anim);
+  // the breathing orb over the bubble (UI.orb, ARCHITECTURE.md 2m): warm just after the set, cooling to calm as the rest runs out
+  ORB=window.UI?.orb?.($('#bub'),{active:()=>!!R&&!!R.rest})||null;
   $('#r30').onclick=()=>{R.rest.len+=30;keepRun();tick()};
   $('#rs').onclick=done;
   tick();RI=setInterval(tick,250);
@@ -1073,8 +1075,9 @@ function holdView(){
     $('#clk').textContent=fm(left/60);$('#pg').setAttribute('stroke-dasharray',`${(el()/10/R.hold.len).toFixed(2)} 100`);
     const b=breath(el());$('#pc').innerHTML=`${CUE[b.c]||b.c}<em>${b.left}</em>`;
   };
-  const anim=()=>{const b=$('#ball');if(!R||!R.hold||!b)return;b.style.transform=`scale(${breath(el()).s.toFixed(3)})`;RA=requestAnimationFrame(anim)};
+  const anim=()=>{const b=$('#ball');if(!R||!R.hold||!b)return;const s=breath(el()).s;b.style.transform=`scale(${s.toFixed(3)})`;ORB?.level(s);RA=requestAnimationFrame(anim)};
   RA=requestAnimationFrame(anim);
+  ORB=window.UI?.orb?.($('#bub'),{active:()=>!!R&&!!R.hold})||null;   // the breathing orb (UI.orb)
   $('#h15').onclick=()=>{R.hold.len+=15;keepRun();tick()};
   $('#hd').onclick=()=>log(Math.max(1,Math.round(el()/1000)));
   $('#hx').onclick=()=>{R.hold=null;keepRun();draw()};
@@ -1104,6 +1107,7 @@ function finishView(){
     ev.preventDefault();const el=ev.target.elements,rpe=el.rpe.value===''?null:+el.rpe.value,note=el.note.value.trim();
     E.forEach((e,i)=>S.log.push({id:uid(),...e,rpe,note:i?'':note}));
     const at=R.start;clearRun();save();dlg.close();setMonth(at);render();toast(`Logged ${E.length} entr${E.length===1?'y':'ies'}`);
+    setTimeout(()=>window.UI?.bloom?.(),350);   // a workout saved (UI.bloom, ARCHITECTURE.md 2m)
   });
 }
 function noteForm(day){
@@ -1394,6 +1398,7 @@ $('#file').addEventListener('change',async e=>{
 
 function boot(){setMonth(S.log.length?Math.max(...S.log.map(t=>t.at)):Date.now());render()}
 boot();
+window.UI?.backdrop?.({tint:['--success','--accent','--info']});   // ARCHITECTURE.md 2m
 UI.planner('training',[KEY,RUN],planRows);
 if(R)draw();
 // an entry logged from another app (REWIRE) lands in storage while this page is open: pick it up instead of overwriting it
