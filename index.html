@@ -675,7 +675,8 @@ function render(){
   const vd=tk.lastVol?(tk.wkVol-tk.lastVol)/tk.lastVol*100:null;
   const push=t.G.PUSH?.sets||0,pull=t.G.PULL?.sets||0,lift=push+pull+(t.G.LEGS?.sets||0);
 
-  UI.paint($('#top'),heroToday(),{now:true});
+  // Up next, the session Start would begin, right under Today: the same card in every app (UI.upNext)
+  UI.paint($('#top'),heroToday()+UI.upNext({app:'training'}),{now:true});
   UI.paint($('#app'),`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a push, pull, legs or cardio workout, log an entry, import a CSV, or load a sample year to see how it reads.</p><button class="pri" data-a="go">&#9654; Start</button> <button data-a="add">+ Log</button> <button data-a="imp">Import</button> <button data-a="sample">Load sample</button></div>`}
 <section class="g g4">
  <div class="card"><p class="h">Workouts</p><div class="k">This week</div><div class="big ${tk.wkDays>=S.goal?'pos':''}">${tk.wkDays} / ${S.goal}</div>
