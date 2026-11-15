@@ -590,7 +590,7 @@ function calendar(){
   }
   tot=cT?r2(tot/cT):0;
   return `<div class="card">
-  <div class="rowh"><div><p class="h">Training calendar</p><div class="k">Avg strength change per exercise, this month</div><div class="big ${cls(tot)}">${pc(tot,1)}</div></div>
+  <div class="rowh"><div><p class="h">Training calendar</p><div class="k">Strength change this month</div><div class="big ${cls(tot)}">${pc(tot,1)}</div></div>
    <div>Stronger: <b class="pos">${wd}</b> &nbsp; Weaker: <b class="neg">${ld}</b></div></div>
   <div class="cal">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
   <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">Today</button></div>
