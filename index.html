@@ -593,7 +593,7 @@ function calendar(){
   <div class="rowh"><div><p class="h">Training calendar</p><div class="k">Strength change this month</div><div class="big ${cls(tot)}">${pc(tot,1)}</div></div>
    <div>Stronger: <b class="pos">${wd}</b> &nbsp; Weaker: <b class="neg">${ld}</b></div></div>
   <div class="cal">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
-  <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">Today</button></div>
+  <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">Today</button> <button data-a="week">Week</button></div>
    <span class="dim">${td} training day${td===1?'':'s'} · ${nT} entr${nT===1?'y':'ies'}</span></div></div>`;
 }
 
@@ -1349,7 +1349,43 @@ function settingsForm(){
   <div class="fa2"><button type="button" class="pri" data-a="x">Done</button></div>`;
   dlg.showModal();
 }
+/* ---------- weekly review (UI.weekReview: the same sheet, in the same order, in every app; ARCHITECTURE.md 2p) ----------
+   A week of training: workouts against the weekly goal, sets and volume, new bests (estimated 1RM above the best before the week), the split, against the last 8 weeks. A day row shows that day in the page. TODAY's Your week opens it (act 'week'), and so does
+   the Week button under the calendar. */
+function weekRev(){
+  const W=UI.weekReview,{pl,n0,avg,and}=W.t,L=S.log.filter(e=>e&&e.at),day=e=>ymd(new Date(e.at)),u=S.wu||'lb';
+  const work=e=>e.type!=='S',vol=e=>e.type==='W'?(+e.sets||0)*(+e.reps||0)*(+e.load||0):0,e1=e=>e.type==='W'&&+e.load>0&&+e.reps>0?+e.load*(1+(+e.reps)/30):0,cap=g=>g[0]+g.slice(1).toLowerCase();
+  W({weeks:L.map(day),onDay:k=>{U.x={};U.range=k;U.page=0;setMonth(pd(k).getTime());render()},build:ws=>{
+    const ks=Array.from({length:7},(_,i)=>W.add(ws,i)),T=L.filter(e=>ks.includes(day(e))),by=k=>T.filter(e=>day(e)===k),vs=a=>a.reduce((x,e)=>x+vol(e),0);
+    if(!T.length)return {days:ks.map(k=>({k}))};
+    const wdays=ks.filter(k=>by(k).some(work)),goal=S.goal||0,V=vs(T),sets=T.filter(e=>e.type==='W'||e.type==='B').reduce((a,e)=>a+(+e.sets||0),0),cm=T.filter(e=>e.type==='C').reduce((a,e)=>a+(+e.mins||0),0);
+    // new bests: a lift's best estimated 1RM this week, above its best before the week
+    const before={};L.forEach(e=>{if(day(e)<ws&&e1(e))before[e.ex]=Math.max(before[e.ex]||0,e1(e))});
+    const pr={};T.forEach(e=>{const v=e1(e);if(v&&before[e.ex]&&v>before[e.ex]&&v>(pr[e.ex]||0))pr[e.ex]=v});const PR=Object.entries(pr).sort((a,b)=>b[1]/before[b[0]]-a[1]/before[a[0]]);
+    const G={};T.filter(e=>e.type==='W'||e.type==='B').forEach(e=>{const g=grp(e);G[g]=(G[g]||0)+(+e.sets||0)});
+    const wk={},vk={};L.forEach(e=>{const w=W.mon(day(e));if(work(e))(wk[w]??=new Set()).add(day(e));vk[w]=(vk[w]||0)+vol(e)});
+    const pw=Object.keys(wk).filter(w=>w<ws).sort().slice(-8),aw=avg(pw.map(w=>wk[w].size)),av=avg(pw.map(w=>vk[w]||0));
+    let st=0;for(const w of Object.keys(wk).filter(w=>w<=ws).sort().reverse()){if(goal&&wk[w].size>=goal)st++;else break}
+    const max=Math.max(...ks.map(k=>vs(by(k))),1);
+    const days=ks.map(k=>{const D=by(k),w=D.filter(work),v=vs(D),c=w.filter(e=>e.type==='C').reduce((a,e)=>a+(+e.mins||0),0);
+      return {k,n:w.length?`${[...new Set(w.map(grp))].map(cap).join(' · ')} · ${pl(new Set(w.map(e=>e.ex)).size,'exercise')}`:D.length?'Stretch':'',v:v?`${n0(v)} ${u}`:c?`${Math.round(c)} min`:'',bar:v/max,cls:w.length?'pos':''}});
+    const miss=['PUSH','PULL','LEGS'].filter(g=>!G[g]),good=[],look=[],q=['What is my one focus for next week?'];
+    if(goal&&wdays.length>=goal)good.push(`I hit my goal: <b>${wdays.length}</b> of ${goal} workouts.`);
+    if(PR.length)good.push(`New best${PR.length>1?'s':''}: ${PR.slice(0,3).map(([x,v])=>`${esc(x)} <b class="pos">${n0(v)} ${u}</b> (was ${n0(before[x])})`).join(', ')}.`);
+    if(av&&V>av*1.1)good.push(`More volume than my usual week: <b>${n0(V)} ${u}</b> against ${n0(av)}.`);
+    if(goal&&wdays.length<goal)look.push(`${pl(goal-wdays.length,'workout')} short of my ${goal}-a-week goal.`);
+    if(miss.length&&miss.length<3)look.push(`No ${and(miss.map(g=>g.toLowerCase()))} work this week.`);
+    if(av&&V<av*.85)look.push(`Less volume than my usual week (${n0(V)} against ${n0(av)} ${u}).`);
+    if(PR.length)q.push(`What helped my ${esc(PR[0][0])}, and how do I build on it?`);
+    if(miss.length&&miss.length<3)q.push(`When will I fit in ${miss[0].toLowerCase()} next week?`);
+    q.push('One thing to repeat next week. One thing to cut.');
+    return {week:`I trained on <b>${pl(wdays.length,'day')}</b>${goal?` against my goal of ${goal}`:''}: ${pl(sets,'set')} and <b>${n0(V)} ${u}</b> lifted${cm?`, ${Math.round(cm)} min of cardio`:''}.${PR.length?` ${pl(PR.length,'new best')}.`:''}`,
+      context:aw!=null?`Over my last ${pl(pw.length,'week')} I averaged ${Math.round(aw*10)/10} workouts and ${n0(av)} ${u} a week, so this week was ${V>av*1.05?'<b>heavier</b> than usual':V<av*.95?'<b>lighter</b> than usual':'<b>about usual</b>'}.${st>=2?` That's ${st} weeks in a row at my goal.`:''}`:'',
+      days,good,look,more:Object.keys(G).length?[['Split',`<p>${Object.entries(G).sort((a,b)=>b[1]-a[1]).map(([g,n])=>`${cap(g)} <b>${pl(n,'set')}</b>`).join(' · ')}.</p>`]]:[],questions:q};
+  }});
+}
 const ACT={
+  week:()=>weekRev(),
   set:()=>settingsForm(),sync:()=>{dlg.close();document.getElementById('isx-sync')?.click()},
   add:()=>entryForm(),go:()=>R?(AWAY=false,draw()):startForm(),imp:()=>$('#file').click(),x:()=>dlg.close(),sample,csv:exportCSV,
   note:()=>noteForm(U.range in RANGES?ymd(new Date()):U.range),
