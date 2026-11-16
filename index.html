@@ -1435,7 +1435,6 @@ $('#file').addEventListener('change',async e=>{
 
 function boot(){setMonth(S.log.length?Math.max(...S.log.map(t=>t.at)):Date.now());render()}
 boot();
-window.UI?.backdrop?.({tint:['--success','--accent','--info']});   // ARCHITECTURE.md 2m
 UI.planner('training',[KEY,RUN],planRows);
 if(R)draw();
 // an entry logged from another app (REWIRE) lands in storage while this page is open: pick it up instead of overwriting it
