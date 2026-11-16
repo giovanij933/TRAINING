@@ -304,5 +304,7 @@ VersaClimber|quads glutes lats|calves sdelt|Opposite arm and leg drive together;
   const art=names=>{const L=names.map(get).filter(Boolean);if(!L.length)return '';
     const p=[...new Set(L.flatMap(g=>g.p))],g={p,s:[...new Set(L.flatMap(g=>g.s))].filter(k=>!p.includes(k))},at=(side,x)=>fig(side,g).replace(/^<svg[^>]*>/,`<svg x="${x}" width="100" height="220" viewBox="0 0 100 220">`);
     return toArt(`<svg viewBox="0 0 206 220">${at('front',0)}${at('back',106)}</svg>`,{'exg-p':['pa-p'],'exg-s':['pa-s'],'exg-n':['pa-n']})};
-  return {get,html,mini,art,size:Object.keys(G).length};
+  // the two figures for a set of muscle keys: p solid, s light (the Training split card lights them by where your sets went)
+  const figs=(p=[],s=[])=>fig('front',{p,s})+fig('back',{p,s});
+  return {get,html,mini,art,figs,size:Object.keys(G).length};
 })();
