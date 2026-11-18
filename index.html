@@ -140,6 +140,10 @@ dialog.ss .prw .exg-ib:focus-visible,.xl .xrw .exg-ib:focus-visible{outline:2px 
 .exg-fig polygon{fill:color-mix(in srgb,var(--text-muted) 22%,var(--track))}.exg-fig .exg-n{fill:var(--track)}
 .exg-fig .exg-p{fill:var(--accent)}.exg-fig .exg-s{fill:color-mix(in srgb,var(--accent) 40%,var(--track))}
 .exg-mini{display:inline-flex;gap:1px;flex:none}.exg-mini .exg-fig{width:auto;height:40px}
+/* Training split, like REWIRE's "Where urges sit": the figures at the left, the areas beside them */
+.tsm{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;align-items:center}.tsm>div:last-child{flex:1 1 180px;min-width:0}.tsm-f{display:flex;gap:2px;flex:none}.tsm-f .exg-fig{width:auto;height:180px}
+.tsm .hb i.tsl{background:color-mix(in srgb,var(--accent) 40%,var(--track))}.tsm-p{margin:14px 0 0;font-size:13px;line-height:1.5}
+@media(max-width:420px){.tsm{gap:10px}.tsm-f .exg-fig{height:140px}}
 /* in the workout's list the rows keep their height, so LOG SET stays where it was */
 .xl .exg-mini .exg-fig{height:32px}.xl button:has(.exg-mini){padding-top:6px;padding-bottom:6px}
 dialog.ss .prw .exg-mini{margin-right:6px}
@@ -405,7 +409,7 @@ const perfT=e=>{const p=perf(e);return e.type==='C'?`${p.toFixed(2)} ${S.du}/h`:
 
 /* ---------- state ---------- */
 let S=load(),RD='';   // RD: the day the dashboard was last drawn for
-const U={ex:'all',stat:'all',range:'all',page:0,month:null,x:{}};   // x: cross-filters set by clicking a card (grp, week)
+const U={ex:'all',stat:'all',range:'all',page:0,month:null,x:{}};   // x: cross-filters set by clicking a card (grp, mus, week)
 function load(){
   const us=/-US$/.test(navigator.language||''),d={log:[],notes:{},wu:us?'lb':'kg',du:us?'mi':'km',goal:4};
   try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.log))return fix(s,d)}catch(e){}
@@ -470,7 +474,7 @@ function view(useRange=true,skip=''){
   const wk=wkOf,inR=ranger();
   const x=U.x,on=k=>k!==skip&&x[k]!=null,st=skip==='stat'?'all':U.stat;
   return scored().filter(e=>(skip==='ex'||U.ex==='all'||exk(e.ex)===U.ex)&&(st==='all'||(st==='up'?e.d>0:st==='down'?e.d<0:e.d===0))&&(!useRange||inR(e.day))
-    &&(!on('grp')||grp(e)===x.grp)&&(!on('week')||wk(e.day)===x.week));
+    &&(!on('grp')||grp(e)===x.grp)&&(!on('mus')||lifting(e)&&x.mus in areas(e))&&(!on('week')||wk(e.day)===x.week));
 }
 
 function stats(T){
@@ -622,6 +626,23 @@ function table(T){
 // muscle group of an exercise: from the workout library, else from its type
 const GROUP={};for(const d of ['PUSH','PULL','LEGS'])for(const t of ['W','B'])(LIB[d][t]||[]).forEach(x=>GROUP[exk(x)]??=d);
 const grp=e=>e.type==='C'?'CARDIO':e.type==='S'?'MOBILITY':GROUP[exk(e.ex)]||'OTHER';
+// where the sets land, like REWIRE's "Where urges sit": the body in eight areas, each a handful of the exercise guide's
+// muscles (exercises.js). A lifting set counts in full for an area its exercise works first, half for one it only helps;
+// an exercise without a guide counts under Other
+const REG=[['chest','Chest',['chest']],['back','Back',['lats','ub','traps','lb']],['shoulders','Shoulders',['fdelt','sdelt','rdelt']],
+  ['arms','Arms',['bi','tri','fore']],['core','Core',['abs','obl']],['hips','Glutes & hips',['glutes','hipf','add','abd']],
+  ['legs','Legs',['quads','hams','calves','tib']],['neck','Neck',['neck']]];
+const REGN=Object.fromEntries([...REG.map(([k,n])=>[k,n]),['other','Other']]);
+const lifting=e=>(e.type==='W'||e.type==='B')&&e.sets>0;
+// an entry's areas: key → 1 (works it first) or .5 (helps)
+const areas=e=>{const g=window.EXG?.get(e.ex),o={};if(!g)return {other:1};
+  REG.forEach(([k,,ms])=>{if(g.p.some(m=>ms.includes(m)))o[k]=1;else if(g.s.some(m=>ms.includes(m)))o[k]=.5});return Object.keys(o).length?o:{other:1}};
+function split(T){
+  const A={};let n=0;
+  T.filter(lifting).forEach(e=>{n+=e.sets;for(const[k,w]of Object.entries(areas(e))){const a=A[k]??={c:0,r:0,rc:0};a.c+=e.sets*w;if(e.rpe!=null){a.r+=e.rpe*e.sets*w;a.rc+=e.sets*w}}});
+  const tot=Object.values(A).reduce((s,a)=>s+a.c,0),L=Object.entries(A).sort((a,b)=>b[1].c-a[1].c);
+  return {n,tot,L};
+}
 const wkStart=ms=>{const d=new Date(ms);d.setHours(0,0,0,0);d.setDate(d.getDate()-(d.getDay()+6)%7);return d.getTime()};
 function train(T,all=view(false)){
   // each week runs from its own Monday's midnight (a fixed 7 × 24 h drifts an hour across a DST change)
@@ -653,12 +674,25 @@ const GN=g=>g[0]+g.slice(1).toLowerCase();
 // the active filters, as chips under the bar: click one to drop it
 function xfBar(names){
   const R={up:'Progressing',hold:'Holding',down:'Regressing'};
-  const c=[U.ex!=='all'&&['ex',esc(names[U.ex]||U.ex)],U.stat!=='all'&&['stat',R[U.stat]],U.x.grp&&['grp',GN(U.x.grp)],U.x.week&&['week','Week of '+dlabel(U.x.week)],
+  const c=[U.ex!=='all'&&['ex',esc(names[U.ex]||U.ex)],U.stat!=='all'&&['stat',R[U.stat]],U.x.grp&&['grp',GN(U.x.grp)],U.x.mus&&['mus',REGN[U.x.mus]||U.x.mus],U.x.week&&['week','Week of '+dlabel(U.x.week)],
     /^\d{4}-/.test(U.range)&&['range',dlabel(U.range)]].filter(Boolean);
   const el=$('#xf');el.hidden=!c.length;
   el.innerHTML=c.length?`<span>Filtered</span>${c.map(([k,l])=>`<button data-a="xclr" data-v="${k}" aria-label="Remove filter: ${l}"><b>${l}</b> ×</button>`).join('')}${c.length>1?'<button class="clr" data-a="xall">Clear all</button>':''}`:'';
 }
 const pace=v=>v==null?'—':`${fm(v)} /${S.du}`;
+
+// Training split, laid out like REWIRE's "Where urges sit": the body front and back, the area with the most sets solid
+// and any with a tenth or more light; a row an area (its share of your sets, its average RPE, a bar against the top one;
+// tap one to narrow everything to it); and where your hardest sets go (the highest average RPE, 5% of sets or more)
+function splitCard(T){
+  const{n,tot,L}=split(T),top=L[0]?.[0],ms=k=>REG.find(r=>r[0]===k)?.[2]||[];
+  const lit=L.filter(([k,a])=>k!==top&&a.c>=tot*.1).flatMap(([k])=>ms(k)),fig=`<div class="tsm-f">${window.EXG?.figs?EXG.figs(top?ms(top):[],lit):''}</div>`;
+  const hard=L.filter(([,a])=>a.rc>0&&a.c>=tot*.05).sort((a,b)=>b[1].r/b[1].rc-a[1].r/a[1].rc)[0];
+  return `<div class="card"><p class="h">Training split</p><div class="k">${n?`Where your ${n0(n)} lifting set${n===1?'':'s'} went`:'Where your sets go'}</div>
+  ${n?`<div class="tsm">${fig}<div>${L.map(([k,a])=>`<div class="ev pick${xon('mus:'+k)?' on':''}"${xa('mus:'+k)}><span>${esc(REGN[k])}</span><b>${Math.round(a.c/tot*100)}%${a.rc?` <span class="dim">· ${(a.r/a.rc).toFixed(1)} RPE</span>`:''}</b></div><div class="hb"><i class="${k===top?'bga':'tsl'}" style="width:${(a.c/L[0][1].c*100).toFixed(1)}%"></i></div>`).join('')}</div></div>
+  ${hard?`<p class="tsm-p">Your hardest sets go to the <b>${esc(REGN[hard[0]].toLowerCase())}</b>: ${(hard[1].r/hard[1].rc).toFixed(1)} RPE on average over ${n0(Math.round(hard[1].c))} set${Math.round(hard[1].c)===1?'':'s'}.</p>`:''}`
+  :`<div class="tsm">${fig}<div><p class="dim">Log a lifting workout and this shows where your sets go: which muscles get the most work, and which get your hardest sets.</p></div></div>`}`;
+}
 
 function render(){
   RD=ymd(new Date());const names={};S.log.forEach(e=>{names[exk(e.ex)]??=e.ex.trim()});
@@ -671,7 +705,7 @@ function render(){
   $('[data-f=range]').innerHTML=Object.entries(RANGES).map(([k,v])=>`<option value="${k}"${k===U.range?' selected':''}>${v}</option>`).join('')+(U.range in RANGES?'':`<option value="${U.range}" selected>${dlabel(U.range)}</option>`);
   $('[data-f=stat]').value=U.stat;xfBar(names);
   $('#scope').textContent=`Statistics for ${U.ex==='all'?'All Exercises':names[U.ex]} — ${RANGES[U.range]||dlabel(U.range)}`+(nd?` · ${dlabel(s.dk[0])} → ${dlabel(s.dk[nd-1])}`:'');
-  const GS=['PUSH','PULL','LEGS','CARDIO','MOBILITY','OTHER'].filter(g=>tg.G[g]),gm=Math.max(1,...GS.map(g=>tg.G[g].sets)),[wkThis,wkLast]=[tk.wkKeys[7],tk.wkKeys[6]];
+  const [wkThis,wkLast]=[tk.wkKeys[7],tk.wkKeys[6]];
   const vd=tk.lastVol?(tk.wkVol-tk.lastVol)/tk.lastVol*100:null;
   const push=t.G.PUSH?.sets||0,pull=t.G.PULL?.sets||0,lift=push+pull+(t.G.LEGS?.sets||0);
 
@@ -695,13 +729,14 @@ function render(){
 ${bodyHTML(t)}
 <section class="g g21">
  ${calendar()}
- <div class="card"><p class="h">Training split</p><div class="k">Sets by muscle group · cardio and mobility by session</div>
-  ${GS.length?GS.map(g=>hbar(GN(g),tg.G[g].sets,tg.G[g].sets/gm,g==='CARDIO'||g==='MOBILITY'?'bgd':'bga',`grp:${g}`)).join(''):ND}
+ ${splitCard(U.x.mus?view(true,'mus'):T)}
   <div class="sec">Balance</div>
   ${ev('Push : pull',pull?`${n1(push/pull)} : 1`:'—',pull&&Math.abs(push/pull-1)<=.25?1:push||pull?-1:0)}
   ${ev('Legs share of lifting sets',lift?pct(t.G.LEGS?.sets||0,lift):'—')}
   ${ev('Average RPE',s.rpe==null?'—':s.rpe.toFixed(1))}
   ${ev('Workouts per week',s.perWk==null?'—':s.perWk.toFixed(1))}
+  ${ev('Cardio sessions',tg.G.CARDIO?.n||0,0,'','grp:CARDIO')}
+  ${ev('Mobility sessions',tg.G.MOBILITY?.n||0,0,'','grp:MOBILITY')}
   ${ev('Latest PR',t.latestPR?`${esc(t.latestPR.ex)} · ${perfT(t.latestPR)}`:'—',t.latestPR?1:0,t.latestPR?`data-a="day" data-v="${t.latestPR.day}" title="Show ${esc(dlabel(t.latestPR.day))}"`:'')}
  </div>
 </section>
