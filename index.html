@@ -610,14 +610,15 @@ function table(T){
   const F=UI.filter('log',LOGC,()=>{U.page=0;render()}),rows=F.apply([...T].reverse()),pages=Math.max(1,Math.ceil(rows.length/PAGE)),na='<span class="dim">—</span>';
   U.page=Math.min(Math.max(U.page,0),pages-1);
   const body=rows.slice(U.page*PAGE,(U.page+1)*PAGE).map(e=>{const c=e.type==='C';return `<tr>
-   <td>${tfmt(e.at)}</td><td><b>${esc(e.ex)}</b>${e.pr?'<span class="pr">PR</span>':''}</td><td class="dim">${TYPES[e.type]}</td>
+   <td>${tfmt(e.at)}</td><td class="lm"><b>${esc(e.ex)}</b>${e.pr?'<span class="pr">PR</span>':''}</td><td class="dim">${TYPES[e.type]}</td>
    <td class="r">${c?na:e.sets}</td><td class="r">${c?na:e.reps+(e.type==='S'?'s':'')}</td><td class="r">${e.type==='W'?n1(e.load)+' '+S.wu:na}</td>
    <td class="r">${c?+e.dist.toFixed(2)+' '+S.du:na}</td><td>${c?dur(e.mins*60):na}</td><td class="r">${e.rpe??na}</td>
    <td class="r">${perfT(e)}</td>
-   <td class="r">${e.d==null?`<span class="dim">${e.base?'BASE':'—'}</span>`:`<b class="${cls(e.d)}">${pc(e.d,1)}</b>`}</td>
-   <td class="r">${e.note?`<span class="amb" title="${esc(e.note)}">*</span> `:''}<button data-a="edit" data-v="${e.id}">Edit</button> <button data-a="del" data-v="${e.id}" aria-label="Delete entry">X</button></td></tr>`}).join('');
+   <td class="r lk">${e.d==null?`<span class="dim">${e.base?'BASE':'—'}</span>`:`<b class="${cls(e.d)}">${pc(e.d,1)}</b>`}</td>
+   <td class="lp">${tfmt(e.at)} · ${c?`${+e.dist.toFixed(2)} ${S.du} · ${dur(e.mins*60)}`:`${e.sets} × ${e.reps}${e.type==='S'?'s':''}${e.type==='W'?` @ ${n1(e.load)} ${S.wu}`:''}`}${e.rpe!=null?` · RPE ${e.rpe}`:''}</td>
+   <td class="r la">${e.note?`<span class="amb" title="${esc(e.note)}">*</span> `:''}<button data-a="edit" data-v="${e.id}">Edit</button> <button data-a="del" data-v="${e.id}" aria-label="Delete entry">X</button></td></tr>`}).join('');
   return `<div class="card"><div class="rowh"><p class="h">Log</p><button data-a="csv">Export CSV</button></div>
-  <div class="tw" tabindex="0" role="region" aria-label="Table"><table><thead><tr><th>${F.th(0)}</th><th>${F.th(1)}</th><th>${F.th(2)}</th><th class="r">${F.th(3)}</th><th class="r">${F.th(4)}</th><th class="r">${F.th(5)}</th><th class="r">${F.th(6)}</th><th>${F.th(7)}</th><th class="r">${F.th(8)}</th><th class="r">${F.th(9)}</th><th class="r">${F.th(10)}</th><th><span class="ui-sr">Actions</span></th></tr></thead>
+  <div class="tw" tabindex="0" role="region" aria-label="Table"><table class="ui-lg"><thead><tr><th>${F.th(0)}</th><th>${F.th(1)}</th><th>${F.th(2)}</th><th class="r">${F.th(3)}</th><th class="r">${F.th(4)}</th><th class="r">${F.th(5)}</th><th class="r">${F.th(6)}</th><th>${F.th(7)}</th><th class="r">${F.th(8)}</th><th class="r">${F.th(9)}</th><th class="r">${F.th(10)}</th><th><span class="ui-sr">Actions</span></th></tr></thead>
   <tbody>${body||'<tr><td colspan="12" class="dim">No entries in this view_</td></tr>'}</tbody></table></div>
   <div class="calf"><div><button data-a="pp">&lt;</button> Page <b>${U.page+1}</b> of ${pages} <button data-a="pn">&gt;</button></div><span class="dim">${rows.length} record${rows.length===1?'':'s'}${F.clear()}</span></div></div>`;
 }
