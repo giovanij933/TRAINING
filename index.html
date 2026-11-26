@@ -1035,7 +1035,7 @@ function workView(){
   <div class="fgrid"><div class="pmr">${pmb('ir',-1,'1 rep fewer')}<label>Reps<input id="ir" type="number" inputmode="numeric" min="1" step="1" value="${ns.reps||''}"></label>${pmb('ir',1,'1 rep more')}</div>
    ${x.type==='W'?`<div class="pmr">${pmb('il',-LS(),`${LS()} ${S.wu} less`)}<label>Load (${S.wu})<input id="il" inputmode="decimal" autocomplete="off" value="${ns.load??''}"></label>${pmb('il',LS(),`${LS()} ${S.wu} more`)}</div>`:''}</div>
   <button type="button" class="pri" id="ls" style="width:100%">Log set ${x.sets.length+1} · rest ${fm(R.restSec/60)}</button>`}
-  <div class="fa2"><button type="button" class="ghost" id="rd">Discard</button>${R.cur<R.list.length-1?'<button type="button" id="nx">NEXT &gt;</button>':''}<button type="button" class="pri" id="fn">Finish</button></div></div>`;
+  <div class="fa2"><button type="button" class="ghost" id="rd">Discard</button>${R.cur<R.list.length-1?'<button type="button" id="nx">Next ›</button>':''}<button type="button" class="pri" id="fn">Finish</button></div></div>`;
   const tick=()=>{$('#wt').textContent='· '+fm((Date.now()-R.start)/60000);if(C)$('#cc').textContent=fm(cms(x)/60000)};
   tick();RI=setInterval(tick,250);
   dlg.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{R.cur=+b.dataset.x;keepRun();draw()});
@@ -1138,7 +1138,7 @@ function finishView(){
   <p class="dim" style="margin:10px 0">${sets} sets${tv?` · ${n0(tv)} ${S.wu} volume`:''}</p>
   <div class="fgrid"><label>Session RPE (1–10)<input name="rpe" type="number" min="1" max="10" step="0.5"></label></div>
   <label>Note<textarea name="note" rows="3" placeholder="Sleep. Energy. What moved well."></textarea></label>
-  <div class="fa2"><button type="button" class="ghost" id="bk">&lt; BACK</button><button class="pri"${E.length?'':' disabled'}>Save</button></div></form>`;
+  <div class="fa2"><button type="button" class="ghost" id="bk">‹ Back</button><button class="pri"${E.length?'':' disabled'}>Save</button></div></form>`;
   $('#bk').onclick=()=>{R.fin=false;keepRun();draw()};
   $('#ff').addEventListener('submit',ev=>{
     ev.preventDefault();const el=ev.target.elements,rpe=el.rpe.value===''?null:+el.rpe.value,note=el.note.value.trim();
