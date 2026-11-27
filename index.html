@@ -510,7 +510,7 @@ function gauge(segs,label){
 }
 /* bodyweight and recovery, from ISIONXXX's morning check-in (logged on TODAY; read-only here) */
 const CQ=['','Poor','Restless','OK','Good','Great'],CE=['','Drained','Low','Steady','Good','Charged'];
-function checkins(){let L=[];try{L=JSON.parse(localStorage.getItem('isx.checkin.v1'))?.log}catch(e){}return Array.isArray(L)?L.filter(e=>typeof e?.day==='string').sort((a,b)=>a.day<b.day?-1:1):[]}   // a bad row is skipped, not fatal
+function checkins(){return UI.checkins().log}   // a bad row is skipped, not fatal
 // a plain readiness call from sleep and energy, like the readiness scores in recovery apps
 const rdy=c=>!c?['Check in on TODAY',0]:c.energy<=2||c.sleep<6?['Go lighter today',-1]:c.energy>=4&&c.sleep>=7?['Good day to push',1]:['Train as planned',0];
 const toWU=(w,u)=>!(w>0)?null:!u||u===S.wu?w:S.wu==='kg'?w/2.20462:w*2.20462;
