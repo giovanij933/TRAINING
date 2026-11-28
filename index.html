@@ -416,10 +416,12 @@ function load(){
   return d;
 }
 // a bad file, another app or an old version can leave rows or settings malformed: drop those rows, make numbers numbers
-// and fall back to the defaults, so one bad value can't stop the app from starting
+// and fall back to the defaults, so one bad value can't stop the app from starting. An id keeps letters, digits, - and
+// _: the pages put it into markup as it is, so one with quotes in it (a restored file, a synced copy) could carry HTML
+// into the page and run a script there, which could read every app's data
 function fix(s,d){
   const log=s.log.filter(e=>e&&typeof e.ex==='string'&&e.ex.trim()&&/^[WBCS]$/.test(e.type)&&typeof e.at==='number'&&isFinite(e.at))
-    .map(e=>({...e,id:e.id==null?uid():e.id,sets:+e.sets||0,reps:+e.reps||0,load:+e.load||0,dist:+e.dist||0,mins:+e.mins||0,rpe:e.rpe==null||e.rpe===''||!isFinite(e.rpe)?null:+e.rpe,note:typeof e.note==='string'?e.note:''}));
+    .map(e=>({...e,id:e.id==null?uid():String(e.id).replace(/[^\w-]/g,'_').slice(0,64),sets:+e.sets||0,reps:+e.reps||0,load:+e.load||0,dist:+e.dist||0,mins:+e.mins||0,rpe:e.rpe==null||e.rpe===''||!isFinite(e.rpe)?null:+e.rpe,note:typeof e.note==='string'?e.note:''}));
   return {...d,...s,log,notes:s.notes&&typeof s.notes==='object'&&!Array.isArray(s.notes)?s.notes:{},skip:Array.isArray(s.skip)?s.skip.filter(x=>typeof x==='string'):[],
     wu:s.wu==='kg'||s.wu==='lb'?s.wu:d.wu,du:s.du==='km'||s.du==='mi'?s.du:d.du,goal:+s.goal>0?+s.goal:d.goal};
 }
